@@ -19,6 +19,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 
 public class SideWindowAdd extends SideWindow{
@@ -38,7 +39,8 @@ public class SideWindowAdd extends SideWindow{
         labelFieldComb.put("Ημερομηνία κυκλοφορίας του άλμπουμ:", new TextField());
         labelFieldComb.put("url των στίχων του τραγουδιού(azlyrics.com):", new TextField());
 
-        Button csv = new Button("csv");
+        Button csv = new Button("CSV");
+        csv.setFont(new Font(FONT_SIZE));
         addToButtonList(csv);
         disableOK(true);
 
@@ -51,7 +53,7 @@ public class SideWindowAdd extends SideWindow{
             toadd.setFont(new Font(FONT_SIZE));
             TextField inputField = labelFieldComb.get(l);
             input.add(inputField, 1, i);
-            inputField.setMaxWidth(Double.MAX_VALUE);
+            GridPane.setHgrow(inputField, Priority.ALWAYS);
             inputField.setFont(new Font(FONT_SIZE));
             inputField.textProperty().addListener((obs, oldV, newV)->{
                 if(!newV.isEmpty()){

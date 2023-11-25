@@ -47,9 +47,7 @@ public class Server {
         System.out.println(dtf.format(now)+"\n\n");
         
         new Thread(()->{
-            System.out.println("THREAD 1 TEST-1");
             try (ServerSocket serverSocket = new ServerSocket(DATA_INPUT_PORT)) {
-                System.out.println("THREAD 1 TEST-2");
                 while(true){
                     Socket clientSocket = serverSocket.accept();
                     handleDataInputConnection(clientSocket);
@@ -61,7 +59,7 @@ public class Server {
         }).start();
 
         new Thread(()->{
-            System.out.println("THREAD 2 TEST");
+            
         }).start();
         
         try (ServerSocket serverSocket = new ServerSocket(QUERY_PORT)) {
@@ -80,17 +78,12 @@ public class Server {
      * @param clientSocket
      */
     private static void handleDataInputConnection(Socket clientSocket) {
-        System.out.println("THREAD 1 TEST-3");
-        try (ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream())) {
-            
-            //while(ois.available() != 0){
-                Object received = ois.readObject();
-                System.out.println("THREAD 1 TEST-4");
-                System.out.println("Front-end sent object: '"+received.toString()+"' at "+getCurrentTime()+"\n");
-            //}
+        try (ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream())) {     
+            //won't work with while, for multiple objects make multiple connections
+            Object received = ois.readObject();
+            System.out.println("Front-end sent object: '"+received.toString()+"' at "+getCurrentTime()+"\n");
             clientSocket.close();
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("THREAD 1 TEST-5");
             // TODO Auto-generated catch block
             e.printStackTrace();
         }

@@ -3,7 +3,9 @@ package gr.uop;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.Separator;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -32,7 +34,12 @@ public abstract class SideWindow extends VBox{
         buttonList.getChildren().add(b);
     }
     public void addButtonListToWindow(){
-        this.getChildren().add(buttonList);
+        VBox bottom = new VBox();
+        bottom.setPadding(new Insets(10, 0, 0, 0));
+        Separator line = new Separator();
+        bottom.getChildren().addAll(line, buttonList);
+        this.getChildren().add(bottom);
+        buttonList.setAlignment(Pos.BASELINE_CENTER);
     }
     /**
      * disable OK button

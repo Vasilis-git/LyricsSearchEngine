@@ -12,6 +12,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.image.Image;
@@ -108,12 +109,15 @@ public class SearchEngineWindow extends BorderPane{
         contentBox.setAlignment(Pos.CENTER);    
 
         Label imgSrc = new Label("Button icons from icons8.com");
-        imgSrc.setAlignment(Pos.TOP_RIGHT);
+        Separator line = new Separator();
+        VBox bottom = new VBox(0);
+        bottom.getChildren().addAll(line, imgSrc);
+        bottom.setPadding(new Insets(10, 0, 0, 0));
+        bottom.setAlignment(Pos.BASELINE_CENTER);
 
         this.setCenter(contentBox);
         this.setTop(settings);
-        this.setBottom(imgSrc);
-        imgSrc.setPadding(new Insets(10, 0, 0, 5));
+        this.setBottom(bottom);
         this.setPadding(new Insets(5));
 
 
