@@ -47,7 +47,6 @@ public class SearchEngineWindow extends BorderPane{
 
     public SearchEngineWindow(){
         super();
-        settingsWindow = new SideWindowSettings(this.getTop(), this);
         searchField = new TextField();
         searchField.setPromptText("Αναζήτηση στίχων, καλλιτεχνών...");
         searchField.setMaxWidth(Double.MAX_VALUE);
@@ -114,6 +113,8 @@ public class SearchEngineWindow extends BorderPane{
         this.setBottom(bottom);
         this.setPadding(new Insets(5));
 
+        settingsWindow = new SideWindowSettings(this.getTop(), this);
+
 
         /***functionality***/
         //load port constants
@@ -157,16 +158,18 @@ public class SearchEngineWindow extends BorderPane{
         SideWindowSettings.addAction((obs, oldV, newV)->{
             //show only chosen number of top results, when value changes after showing results
             ObservableList<Node> list = resultsAreaContent.getChildren();
-            if(list != null){
+            if(list != null && list.isEmpty() == false){
                 Iterator<Node> it = list.iterator();
                 int keep = SideWindowSettings.getNumOfResultsToShow();
                 while(it.hasNext() && keep > 0){
                     it.next();
                     keep -= 1;
                 }
-                while(it.hasNext()){
-                    resultsAreaContent.getChildren().remove(it.next());
-                }
+                Platform.runLater(()->{
+                    while(it.hasNext()){
+                        resultsAreaContent.getChildren().remove(it.next());
+                    }
+                });
             }
         });
         searchField.textProperty().addListener((obs, oldV, newV)->{
@@ -182,11 +185,19 @@ public class SearchEngineWindow extends BorderPane{
             if(searchField.getText() != null && searchField.getText().isBlank() == false){
                 String toSend = searchField.getText();
                 pr.println(toSend);
+                ArrayList<SongInfo> results = new ArrayList<>();
                 SongInfo s = (SongInfo)fromServer.readObject();
 				while(s != null){
-					s = (SongInfo)fromServer.readObject();
-                    resultsAreaContent.getChildren().add(new Label(s.toString()));
+                    results.add(s);
+                    s = (SongInfo)fromServer.readObject();
 				}
+                int keep = SideWindowSettings.getNumOfResultsToShow();
+                int count = 0;
+                for(SongInfo si :results){
+                    resultsAreaContent.getChildren().add(new Label(si.toString()));
+                    count += 1;
+                    if(keep == count){break;}
+                }
             }
         } catch (IOException | ClassNotFoundException e) {
             // TODO Auto-generated catch block
