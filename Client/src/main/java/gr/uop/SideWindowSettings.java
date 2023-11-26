@@ -1,5 +1,6 @@
 package gr.uop;
 
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -13,6 +14,7 @@ import javafx.scene.text.Font;
 
 public class SideWindowSettings extends SideWindow{
     private static int numberOfResults = 0;//0 means all there are
+    private static TextField number;
 
     public SideWindowSettings(Node previous, BorderPane main){
         super();
@@ -26,7 +28,7 @@ public class SideWindowSettings extends SideWindow{
 
         Label prompt = new Label("Show");
         Label promptContinued = new Label("top results");
-        TextField number = new TextField();
+        number = new TextField();
         number.setMaxWidth(40);
         prompt.setFont(new Font(FONT_SIZE));
         promptContinued.setFont(new Font(FONT_SIZE));
@@ -64,6 +66,14 @@ public class SideWindowSettings extends SideWindow{
             main.setTop(previous);
         });
     }
+    /**
+     * add more actiton when the TextField changes content
+     * @param listener the listener to add
+     */
+    public static void addAction(ChangeListener<? super String> listener){
+        number.textProperty().addListener(listener);
+    }
+
     public static int getNumOfResultsToShow(){
         return numberOfResults;
     }

@@ -3,8 +3,16 @@
  */
 package gr.uop;
 
+import java.util.NoSuchElementException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -23,7 +31,7 @@ public class Server {
     public static void main(String[] args) {
 
         //load port constants
-        Path filePath = Paths.get("/home/vasilis/Έγγραφα/VS Code/LyricsSearchEngine/shared.txt");
+        Path filePath = Paths.get("shared.txt");
         final int QUERY_PORT, DATA_INPUT_PORT, FILE_PORT;
         int qp = 0,dip = 0,fp = 0;
         try (Scanner port_constants = new Scanner(filePath)) {
@@ -57,16 +65,13 @@ public class Server {
                 e.printStackTrace();
             }
         }).start();
-
-        new Thread(()->{
-            
-        }).start();
         
-        try (ServerSocket serverSocket = new ServerSocket(QUERY_PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(QUERY_PORT);) {     
             while(true){
                 Socket clientSocket = serverSocket.accept();
-                handleQueryConnection(clientSocket);
+                handleQueryConnection(clientSocket, QUERY_PORT);
             }
+
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -93,14 +98,21 @@ public class Server {
      * Handles a client query connection
      * @param clientSocket the socket to handle
      */
-    private static void handleQueryConnection(Socket clientSocket) {
-        try {
-            Scanner input = new Scanner(clientSocket.getInputStream());
+    private static void handleQueryConnection(Socket clientSocket, int port) {          
+        try (Scanner input = new Scanner(clientSocket.getInputStream());
+             ObjectOutputStream toClient = new ObjectOutputStream(clientSocket.getOutputStream())) {
+                
             String read = input.nextLine();
             System.out.println("Front-end sent: '"+read+"' at "+getCurrentTime()+"\n");
-            // Close the client socket
+            //test objects, must send search results here.
+            SongInfo s1 = new SongInfo(read, read, read);
+            SongInfo s2 = new SongInfo(read+"1", read+"1", read+"1");
+            toClient.writeObject(s1);
+            toClient.writeObject(s2);
+            toClient.writeObject(null);//MUST send a null object so the client can know there's nothing more to read.
             clientSocket.close();
         } catch (IOException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

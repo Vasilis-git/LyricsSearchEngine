@@ -2,13 +2,24 @@ package gr.uop;
 
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Scanner;
+
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -31,9 +42,12 @@ public class SearchEngineWindow extends BorderPane{
     private final TextField searchField;
     private final Button searchButton;
     private final ScrollPane resultsArea;
+    private VBox resultsAreaContent;
+    private SideWindowSettings settingsWindow;
 
     public SearchEngineWindow(){
         super();
+        settingsWindow = new SideWindowSettings(this.getTop(), this);
         searchField = new TextField();
         searchField.setPromptText("Αναζήτηση στίχων, καλλιτεχνών...");
         searchField.setMaxWidth(Double.MAX_VALUE);
@@ -46,30 +60,10 @@ public class SearchEngineWindow extends BorderPane{
         resultsArea = new ScrollPane();
         resultsArea.setStyle("-fx-background-color:transparent;");//hide borders
         resultsArea.setFitToWidth(true);//always fit content to ScrollPane's width
-        VBox resultsAreaContent = new VBox(5);
+        resultsAreaContent = new VBox(5);
         resultsAreaContent.setPadding(new Insets(0, 5, 0, 0));//space between scoll bar and content
         resultsArea.setContent(resultsAreaContent);
         resultsArea.setPadding(new Insets(10, 0, 0,0));
-
-
-        /*results example*/
-        int resultCount = 100;
-        int showCount;
-        TitledPane results[] = new TitledPane[resultCount];
-        if(SideWindowSettings.getNumOfResultsToShow() == 0){
-            showCount = resultCount;
-        }else{showCount = SideWindowSettings.getNumOfResultsToShow();}
-        for (int i = 0; i < showCount; i++) {
-            if(resultCount < i){break;}
-            Label info = new Label("Result "+i+" info");
-            info.setFont(new Font(17));
-            results[i] = new TitledPane("Result "+i, info);
-            results[i].setMaxWidth(Double.MAX_VALUE);
-            results[i].setExpanded(false);
-            results[i].setFont(new Font(20));
-            resultsAreaContent.getChildren().add(results[i]);
-        }
-        /****************/
 
         HBox searchLine = new HBox(5);
         searchLine.getChildren().addAll(searchField, searchButton);
@@ -146,7 +140,6 @@ public class SearchEngineWindow extends BorderPane{
             this.setCenter(addSong);
         });
         settings.setOnAction((e)->{
-            SideWindowSettings settingsWindow = new SideWindowSettings(this.getTop(), this);
             this.setTop(settingsWindow);
         });
 
@@ -161,18 +154,43 @@ public class SearchEngineWindow extends BorderPane{
         searchButton.setOnAction((e)->{
             handleSearch(QUERY_PORT);
         });
+        SideWindowSettings.addAction((obs, oldV, newV)->{
+            //show only chosen number of top results, when value changes after showing results
+            ObservableList<Node> list = resultsAreaContent.getChildren();
+            if(list != null){
+                Iterator<Node> it = list.iterator();
+                int keep = SideWindowSettings.getNumOfResultsToShow();
+                while(it.hasNext() && keep > 0){
+                    it.next();
+                    keep -= 1;
+                }
+                while(it.hasNext()){
+                    resultsAreaContent.getChildren().remove(it.next());
+                }
+            }
+        });
+        searchField.textProperty().addListener((obs, oldV, newV)->{
+            if(newV.isEmpty()){//remove all results
+                resultsAreaContent.getChildren().removeAll(resultsAreaContent.getChildren());}});
         /*******************/
     }
     private void handleSearch(int port){
-        try (Socket clientSocket = new Socket("localhost", port)) {
-            OutputStream outstream = clientSocket.getOutputStream();
-            PrintWriter out = new PrintWriter(outstream);
-            out.print(searchField.getText());
-            out.flush();
-            out.close();
-        } catch (IOException e1) {
+        try (Socket clientSocket = new Socket("localhost", port);
+             PrintWriter pr = new PrintWriter(clientSocket.getOutputStream(), true);
+			 ObjectInputStream fromServer = new ObjectInputStream(clientSocket.getInputStream())) {
+            
+            if(searchField.getText() != null && searchField.getText().isBlank() == false){
+                String toSend = searchField.getText();
+                pr.println(toSend);
+                SongInfo s = (SongInfo)fromServer.readObject();
+				while(s != null){
+					s = (SongInfo)fromServer.readObject();
+                    resultsAreaContent.getChildren().add(new Label(s.toString()));
+				}
+            }
+        } catch (IOException | ClassNotFoundException e) {
             // TODO Auto-generated catch block
-            e1.printStackTrace();
+            e.printStackTrace();
         }
     }
 }

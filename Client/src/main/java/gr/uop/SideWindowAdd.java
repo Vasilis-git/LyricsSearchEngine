@@ -34,9 +34,6 @@ public class SideWindowAdd extends SideWindow{
         Map<String,TextField> labelFieldComb = new HashMap<>();
         labelFieldComb.put("Τίτλος τραγουδιού:", new TextField());
         labelFieldComb.put("Όνομα καλλιτέχνη/συγκροτήματος:", new TextField());
-        labelFieldComb.put("Άλμπουμ:", new TextField());
-        labelFieldComb.put("Τύπος άλμπουμ:", new TextField());
-        labelFieldComb.put("Ημερομηνία κυκλοφορίας του άλμπουμ:", new TextField());
         labelFieldComb.put("url των στίχων του τραγουδιού(azlyrics.com):", new TextField());
 
         Button csv = new Button("CSV");
@@ -80,7 +77,7 @@ public class SideWindowAdd extends SideWindow{
                 confirm.setContentText("Συνέχεια;");
                 Optional<ButtonType> res = confirm.showAndWait();
                 if(res.isPresent() && res.get() == yesType){
-                    SongInfo toAdd = new SongInfo(labelFieldComb.get("Τίτλος τραγουδιού:").getText(), labelFieldComb.get("Όνομα καλλιτέχνη/συγκροτήματος:").getText(), labelFieldComb.get("Άλμπουμ:").getText(), labelFieldComb.get("Τύπος άλμπουμ:").getText(), labelFieldComb.get("Ημερομηνία κυκλοφορίας του άλμπουμ:").getText(), labelFieldComb.get("url των στίχων του τραγουδιού(azlyrics.com):").getText());
+                    SongInfo toAdd = new SongInfo(labelFieldComb.get("Τίτλος τραγουδιού:").getText(), labelFieldComb.get("Όνομα καλλιτέχνη/συγκροτήματος:").getText(), labelFieldComb.get("url των στίχων του τραγουδιού(azlyrics.com):").getText());
                     try (Socket clientSocket = new Socket("localhost", port)) {
                         ObjectOutputStream ous = new ObjectOutputStream(clientSocket.getOutputStream());
                         ous.writeObject(toAdd);
