@@ -194,7 +194,9 @@ public class SearchEngineWindow extends BorderPane{
                 int keep = SideWindowSettings.getNumOfResultsToShow();
                 int count = 0;
                 for(SearchResult si :results){
-                    resultsAreaContent.getChildren().add(new Label(si.toString()));
+                    TitledPane p = new TitledPane(si.getTitle(), new Label(si.getContent()));
+                    p.setCollapsible(false);
+                    resultsAreaContent.getChildren().add(p);
                     count += 1;
                     if(keep == count){break;}
                 }

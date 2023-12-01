@@ -17,5 +17,4 @@ public class SearchResult implements Serializable{
     public String getContent(){
         return content;
     }
-    
 }
