@@ -185,15 +185,15 @@ public class SearchEngineWindow extends BorderPane{
             if(searchField.getText() != null && searchField.getText().isBlank() == false){
                 String toSend = searchField.getText();
                 pr.println(toSend);
-                ArrayList<SongInfo> results = new ArrayList<>();
-                SongInfo s = (SongInfo)fromServer.readObject();
+                ArrayList<SearchResult> results = new ArrayList<>();
+                SearchResult s = (SearchResult)fromServer.readObject();
 				while(s != null){
                     results.add(s);
-                    s = (SongInfo)fromServer.readObject();
+                    s = (SearchResult)fromServer.readObject();
 				}
                 int keep = SideWindowSettings.getNumOfResultsToShow();
                 int count = 0;
-                for(SongInfo si :results){
+                for(SearchResult si :results){
                     resultsAreaContent.getChildren().add(new Label(si.toString()));
                     count += 1;
                     if(keep == count){break;}

@@ -2,8 +2,7 @@ package gr.uop;
 
 import java.io.Serializable;
 
-
-public class SongInfo implements Serializable{
+public class SongInfo implements Serializable{//class for adding songs in the set
     private String songTitle, nameOfSingerOrBand, lyricsLink;
 
     public SongInfo(String songTitle, String nameOfSingerOrBand, String lyricsLink){

@@ -3,24 +3,16 @@
  */
 package gr.uop;
 
-import java.util.NoSuchElementException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Scanner;
-import java.time.format.DateTimeFormatter; 
-import org.apache.lucene.*;
+import java.time.format.DateTimeFormatter;
 
 
 public class Server {
@@ -29,7 +21,7 @@ public class Server {
     
 
     public static void main(String[] args) {
-
+        
         //load port constants
         Path filePath = Paths.get("shared.txt");
         final int QUERY_PORT, DATA_INPUT_PORT, FILE_PORT;
@@ -105,8 +97,9 @@ public class Server {
             String read = input.nextLine();
             System.out.println("Front-end sent: '"+read+"' at "+getCurrentTime()+"\n");
             //test objects, must send search results here.
-            SongInfo s1 = new SongInfo(read, read, read);
-            SongInfo s2 = new SongInfo(read+"1", read+"1", read+"1");
+            SearchResult s1 = new SearchResult(read, read);
+            SearchResult s2 = new SearchResult(read+"1", read+"1");
+            
             toClient.writeObject(s1);
             toClient.writeObject(s2);
             toClient.writeObject(null);//MUST send a null object so the client can know there's nothing more to read.
