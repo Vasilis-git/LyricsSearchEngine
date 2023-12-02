@@ -9,9 +9,6 @@
 # Log file
 *.log
 
-#text files
-*.txt
-
 #data file
 *.data
 

@@ -34,9 +34,15 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import javafx.scene.text.TextFlow;
 
 public class SearchEngineWindow extends BorderPane{
     private final TextField searchField;
@@ -194,8 +200,33 @@ public class SearchEngineWindow extends BorderPane{
                 int keep = SideWindowSettings.getNumOfResultsToShow();
                 int count = 0;
                 for(SearchResult si :results){
-                    TitledPane p = new TitledPane(si.getTitle(), new Label(si.getContent()));
+                    /*styling*/
+                    TextFlow content = new TextFlow();
+                    Text contentText = new Text(si.getContent());
+                    contentText.setFont(new Font(17));
+                    content.getChildren().add(contentText);
+                    String contentString = contentText.getText();
+                    if(contentString.contains(toSend)){
+                        Text previous = new Text(contentString.substring(0, contentString.indexOf(toSend)));
+                        String toBold = contentString.substring(contentString.indexOf(toSend), toSend.length());
+                        Text next = new Text(contentString.substring(contentString.indexOf(toSend)+toSend.length(), contentString.length()));
+                        previous.setFont(new Font(17));
+                        next.setFont(new Font(17));
+                        Text bold = new Text(toBold);
+                        bold.setFont(new Font(17));
+                        bold.setStyle("-fx-font-weight: bold");
+                        content.getChildren().remove(contentText);
+                        content.getChildren().addAll(previous, bold, next);
+                    }
+                    HBox contBox = new HBox(content);
+                    contBox.setPadding(new Insets(2, 0, 5, 15));
+                    TitledPane p = new TitledPane(si.getTitle(), contBox);
+                    p.setTextFill(Paint.valueOf(Color.BLUE.toString()));
+                    p.setUnderline(true);
+                    contBox.setAlignment(Pos.TOP_LEFT);
                     p.setCollapsible(false);
+                    p.setFont(new Font(20));
+                    /*********/
                     resultsAreaContent.getChildren().add(p);
                     count += 1;
                     if(keep == count){break;}
