@@ -2,17 +2,14 @@ package gr.uop;
 
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
+import java.util.StringTokenizer;
+import java.util.NoSuchElementException;
 
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
@@ -124,7 +121,7 @@ public class SearchEngineWindow extends BorderPane{
 
         /***functionality***/
         //load port constants
-        Path filePath = Paths.get("/home/vasilis/Έγγραφα/VS Code/LyricsSearchEngine/shared.txt");
+        Path filePath = Paths.get("shared.txt");
         final int QUERY_PORT, DATA_INPUT_PORT, FILE_PORT;
         int qp = 0,dip = 0,fp = 0;
         try (Scanner port_constants = new Scanner(filePath)) {
@@ -140,7 +137,7 @@ public class SearchEngineWindow extends BorderPane{
         QUERY_PORT = qp;
         DATA_INPUT_PORT = dip;
         FILE_PORT = fp;
-        //if qp, dip and fp don't change, it means an exception was thrown and the program will stop
+        //if qp, dip and fp don'TextParts change, it means an exception was thrown and the program will stop
 
         add.setOnAction((e)->{
             SideWindowAdd addSong = new SideWindowAdd(this.getCenter(), this, DATA_INPUT_PORT);
@@ -200,33 +197,7 @@ public class SearchEngineWindow extends BorderPane{
                 int keep = SideWindowSettings.getNumOfResultsToShow();
                 int count = 0;
                 for(SearchResult si :results){
-                    /*styling*/
-                    TextFlow content = new TextFlow();
-                    Text contentText = new Text(si.getContent());
-                    contentText.setFont(new Font(17));
-                    content.getChildren().add(contentText);
-                    String contentString = contentText.getText();
-                    if(contentString.contains(toSend)){
-                        Text previous = new Text(contentString.substring(0, contentString.indexOf(toSend)));
-                        String toBold = contentString.substring(contentString.indexOf(toSend), toSend.length());
-                        Text next = new Text(contentString.substring(contentString.indexOf(toSend)+toSend.length(), contentString.length()));
-                        previous.setFont(new Font(17));
-                        next.setFont(new Font(17));
-                        Text bold = new Text(toBold);
-                        bold.setFont(new Font(17));
-                        bold.setStyle("-fx-font-weight: bold");
-                        content.getChildren().remove(contentText);
-                        content.getChildren().addAll(previous, bold, next);
-                    }
-                    HBox contBox = new HBox(content);
-                    contBox.setPadding(new Insets(2, 0, 5, 15));
-                    TitledPane p = new TitledPane(si.getTitle(), contBox);
-                    p.setTextFill(Paint.valueOf(Color.BLUE.toString()));
-                    p.setUnderline(true);
-                    contBox.setAlignment(Pos.TOP_LEFT);
-                    p.setCollapsible(false);
-                    p.setFont(new Font(20));
-                    /*********/
+                    TitledPane p = createResultPane(si, toSend);
                     resultsAreaContent.getChildren().add(p);
                     count += 1;
                     if(keep == count){break;}
@@ -236,5 +207,51 @@ public class SearchEngineWindow extends BorderPane{
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+    private TitledPane createResultPane(SearchResult si, String toSend) {
+        /*styling*/
+        Text contentText = new Text(si.getContent());
+        contentText.setFont(new Font(17));
+
+        TextFlow TextParts = new TextFlow();
+        String contentString = contentText.getText();
+        StringTokenizer tokenizer = new StringTokenizer(contentString, " ");
+        while(tokenizer.hasMoreTokens()){
+            String toCheck = tokenizer.nextToken();
+            StringTokenizer tokenizer2 = new StringTokenizer(toSend, " ");
+            while(tokenizer2.hasMoreTokens()){//make all occurences bold
+                String fromSearchField = tokenizer2.nextToken();
+                Text part = new Text();
+                part.setStyle("-fx-font-weight: bold");
+                part.setFont(new Font(17));
+                if(toCheck.equalsIgnoreCase(fromSearchField)){
+                    part.setText(toCheck+" ");
+                    TextParts.getChildren().add(part);
+                    break;
+                }else if(toCheck.contains(fromSearchField)){
+                    int indexOfSearch = toCheck.indexOf(fromSearchField);
+                    Text previous = null;
+                    if(indexOfSearch != 0){previous = new Text(toCheck.substring(0, indexOfSearch));} 
+                    part.setText(toCheck.substring(indexOfSearch, indexOfSearch+fromSearchField.length()));
+                    Text next = new Text(toCheck.substring(indexOfSearch+fromSearchField.length(), toCheck.length()));
+                    next.setText(next.getText()+" ");
+                    if(previous != null){ previous.setFont(new Font(17));}
+                    next.setFont(new Font(17));
+                    if(previous != null){ TextParts.getChildren().addAll(previous, part, next);
+                    }else{TextParts.getChildren().addAll(part, next);}
+                    break;
+                }
+            }
+        }
+    
+        TextParts.setPadding(new Insets(2, 0, 5, 15));
+        TitledPane p = new TitledPane(si.getTitle(), TextParts);
+        TextParts.setTextAlignment(TextAlignment.LEFT);
+        p.setTextFill(Paint.valueOf(Color.BLUE.toString()));//title only
+        p.setUnderline(true);//title only
+        p.setCollapsible(false);
+        p.setFont(new Font(20));
+        /*********/
+        return p;
     }
 }

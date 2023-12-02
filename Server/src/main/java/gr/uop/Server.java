@@ -96,9 +96,12 @@ public class Server {
                 
             String read = input.nextLine();
             System.out.println("Front-end sent: '"+read+"' at "+getCurrentTime()+"\n");
+
+
             //test objects, must send search results here.
-            SearchResult s1 = new SearchResult(read, read);
-            SearchResult s2 = new SearchResult(read+"1", read+"1");
+            SearchResult s1 = new SearchResult(read, read+" "+read);
+            SearchResult s2 = new SearchResult(read+"1 "+read, read+"1 "+read+" "+ read+"abc "+read+" 123"+read);
+            
             
             toClient.writeObject(s1);
             toClient.writeObject(s2);
