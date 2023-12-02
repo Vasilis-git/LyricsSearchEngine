@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.StringTokenizer;
-import java.util.NoSuchElementException;
-
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -57,7 +55,7 @@ public class SearchEngineWindow extends BorderPane{
         searchButton = new Button();
         ImageView searchImage = new ImageView(new Image(getClass().getResourceAsStream("images/icons8-search-48.png")));
         searchButton.setGraphic(searchImage);
-        searchButton.setMaxSize(48, 48);
+        searchButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
         resultsArea = new ScrollPane();
         resultsArea.setStyle("-fx-background-color:transparent;");//hide borders
