@@ -18,6 +18,7 @@ import javafx.scene.text.Font;
 public class SideWindowSettings extends SideWindow{
     private static int numberOfResults = 0;//0 means all there are
     private static TextField number;
+    private boolean changeToEmpty;
 
     public SideWindowSettings(Node previous, BorderPane main){
         super();
@@ -50,13 +51,6 @@ public class SideWindowSettings extends SideWindow{
         number.setText(null);
         number.setPromptText("all");
 
-        number.textProperty().addListener((obs,oldV, newV)->{
-            if(number.getText().equalsIgnoreCase("0")){
-                number.setText("");
-                number.setPromptText("all");
-            }
-        });
-
         number.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent event) {
@@ -75,7 +69,7 @@ public class SideWindowSettings extends SideWindow{
     }
     private void handleNumberInput(Node previous, BorderPane main) {
         String text = number.getText();
-        String textPrompt = number.getPromptText();
+        number.getPromptText();
         try{
             int n = Integer.parseInt(text);
             if(n < 0){
@@ -86,11 +80,25 @@ public class SideWindowSettings extends SideWindow{
                 numberOfResults = n;
                 Alert info = new Alert(AlertType.INFORMATION);
                 info.setHeaderText("Επιτυχής αλλαγή");
-                if(n > 0){info.setContentText("Θα βλέπεις μόνο τα "+n+"top αποτελέσματα.");}
-                else{info.setContentText("Θα βλέπεις όλα τα αποτελέσματα.");}
+                if(n > 0){info.setContentText("Θα βλέπεις μόνο τα "+n+" top αποτελέσματα απο την επόμενη αναζήτηση.");}
+                else{
+                    info.setContentText("Θα βλέπεις όλα τα αποτελέσματα.");
+                    changeToEmpty = true;
+                }
+                info.showAndWait();
+                if(changeToEmpty){
+                    number.setText(null);
+                    changeToEmpty = false;
+                }
             }
         }catch(NumberFormatException nfe){
-            if(!text.equalsIgnoreCase("all") || (!textPrompt.equalsIgnoreCase("all") && (text.isEmpty() || text.equalsIgnoreCase("all")))){
+            if(text.equalsIgnoreCase("all")){
+                Alert info = new Alert(AlertType.INFORMATION);
+                info.setHeaderText("Επιτυχής αλλαγή");
+                info.setContentText("Θα βλέπεις όλα τα αποτελέσματα.");
+                info.showAndWait();
+                number.setText(null);
+            }else{
                 Alert NaN = new Alert(AlertType.ERROR);
                 NaN.setContentText("Δεν δόθηκε αριθμός.");
                 number.setText(""+numberOfResults);
@@ -98,13 +106,6 @@ public class SideWindowSettings extends SideWindow{
             }
         }
         main.setTop(previous);
-    }
-    /**
-     * add more actiton when the TextField changes content
-     * @param listener the listener to add
-     */
-    public static void addAction(ChangeListener<? super String> listener){
-        number.textProperty().addListener(listener);
     }
 
     public static int getNumOfResultsToShow(){

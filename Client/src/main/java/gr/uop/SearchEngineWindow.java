@@ -156,23 +156,7 @@ public class SearchEngineWindow extends BorderPane{
         searchButton.setOnAction((e)->{
             handleSearch(QUERY_PORT);
         });
-        SideWindowSettings.addAction((obs, oldV, newV)->{
-            //show only chosen number of top results, when value changes after showing results
-            ObservableList<Node> list = resultsAreaContent.getChildren();
-            if(list != null && list.isEmpty() == false){
-                Iterator<Node> it = list.iterator();
-                int keep = SideWindowSettings.getNumOfResultsToShow();
-                while(it.hasNext() && keep > 0){
-                    it.next();
-                    keep -= 1;
-                }
-                Platform.runLater(()->{
-                    while(it.hasNext()){
-                        resultsAreaContent.getChildren().remove(it.next());
-                    }
-                });
-            }
-        });
+        
         searchField.textProperty().addListener((obs, oldV, newV)->{
             if(newV.isEmpty()){//remove all results
                 resultsAreaContent.getChildren().removeAll(resultsAreaContent.getChildren());}});
