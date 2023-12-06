@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Scanner;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 
 
 public class Server {
@@ -21,6 +22,7 @@ public class Server {
     
 
     public static void main(String[] args) {
+        
         
         //load port constants
         Path filePath = Paths.get("shared.txt");
@@ -75,15 +77,31 @@ public class Server {
      * @param clientSocket
      */
     private static void handleDataInputConnection(Socket clientSocket) {
-        try (ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream())) {     
-            //won't work with while, for multiple objects make multiple connections
-            Object received = ois.readObject();
-            System.out.println("Front-end sent object: '"+received.toString()+"' at "+getCurrentTime()+"\n");
+        try (ObjectOutputStream toClient = new ObjectOutputStream(clientSocket.getOutputStream());
+            ObjectInputStream fromClient = new ObjectInputStream(clientSocket.getInputStream())) {     
+           
+            //send all known data to client
+            //test data
+            String read = "TEST";
+            SearchResult s1 = new SearchResult(read, read+" "+read);
+            SearchResult s2 = new SearchResult(read+"1 "+read, read+"1 "+read+" "+ read+"abc "+read+" 123"+read);
+            
+            ArrayList<SearchResult> results = new ArrayList<>();
+            sendData(toClient, results);
+
+            //receive new data from client, and delete from storage space
+
             clientSocket.close();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    private static void sendData(ObjectOutputStream toClient, ArrayList<SearchResult> results) throws IOException{
+        for(SearchResult s : results){
+            toClient.writeObject(s);
+        }toClient.writeObject(null);//MUST send a null object so the client can know there's nothing more to read.
     }
 
     /**
@@ -102,10 +120,11 @@ public class Server {
             SearchResult s1 = new SearchResult(read, read+" "+read);
             SearchResult s2 = new SearchResult(read+"1 "+read, read+"1 "+read+" "+ read+"abc "+read+" 123"+read);
             
-            
-            toClient.writeObject(s1);
-            toClient.writeObject(s2);
-            toClient.writeObject(null);//MUST send a null object so the client can know there's nothing more to read.
+            ArrayList<SearchResult> results = new ArrayList<>();
+            results.add(s1);
+            results.add(s2);  
+            sendData(toClient, results);
+
             clientSocket.close();
         } catch (IOException e) {
             // TODO Auto-generated catch block

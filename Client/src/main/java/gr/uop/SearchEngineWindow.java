@@ -116,12 +116,11 @@ public class SearchEngineWindow extends BorderPane{
         /***functionality***/
         //load port constants
         Path filePath = Paths.get("shared.txt");
-        final int QUERY_PORT, DATA_INPUT_PORT, FILE_PORT;
-        int qp = 0,dip = 0,fp = 0;
+        final int QUERY_PORT, DATA_INPUT_PORT;
+        int qp = 0,dip = 0;
         try (Scanner port_constants = new Scanner(filePath)) {
             qp = Integer.parseInt(port_constants.next());
             dip = Integer.parseInt(port_constants.next());
-            fp = Integer.parseInt(port_constants.next());
 
         } catch (NumberFormatException | IOException e) {
             // TODO Auto-generated catch block
@@ -130,9 +129,6 @@ public class SearchEngineWindow extends BorderPane{
         }
         QUERY_PORT = qp;
         DATA_INPUT_PORT = dip;
-        FILE_PORT = fp;
-        //if qp, dip and fp don'TextParts change, it means an exception was thrown and the program will stop
-
         add.setOnAction((e)->{
             SideWindowAdd addSong = new SideWindowAdd(this.getCenter(), this, DATA_INPUT_PORT);
             this.setCenter(addSong);
