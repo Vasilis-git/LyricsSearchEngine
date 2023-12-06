@@ -1,6 +1,5 @@
 package gr.uop;
 
-import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
