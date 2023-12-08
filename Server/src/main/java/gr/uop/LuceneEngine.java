@@ -9,13 +9,17 @@ import java.util.Comparator;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.TopDocs;
 
 public class LuceneEngine {
-    static final String indexDir = "src/main/java/com/gr/uop/indexDir";
-    static final String dataDir = "src/main/java/com/gr/uop/dataDir";
-    Indexer indexer;
-    Searcher searcher;
+    private static final String indexDir = "src/main/java/com/gr/uop/indexDir";
+    private static final String dataDir = "src/main/java/com/gr/uop/dataDir";
+    private Indexer indexer;
+    private Searcher searcher;
+    private final int MAX_RESULTS;
+
+    public LuceneEngine(int max_res){
+        MAX_RESULTS = max_res;
+    }
 
     public void createIndex() throws IOException {
         indexer = new Indexer(indexDir);
@@ -28,7 +32,7 @@ public class LuceneEngine {
     }
 
     public void search(String searchQuery) throws IOException, ParseException {
-        searcher = new Searcher(indexDir);
+        searcher = new Searcher(indexDir, this);
         long startTime = System.currentTimeMillis();
         TopDocs hits = searcher.search(searchQuery);
         long endTime = System.currentTimeMillis();
@@ -50,5 +54,9 @@ public class LuceneEngine {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public int getMaxResultsCount() {
+        return MAX_RESULTS;
     }
 }

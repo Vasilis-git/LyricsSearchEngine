@@ -156,12 +156,13 @@ public class SearchEngineWindow extends BorderPane{
     }
     private void handleSearch(int port){
         try (Socket clientSocket = new Socket("localhost", port);
-             PrintWriter pr = new PrintWriter(clientSocket.getOutputStream(), true);
+             PrintWriter toServer = new PrintWriter(clientSocket.getOutputStream(), true);
 			 ObjectInputStream fromServer = new ObjectInputStream(clientSocket.getInputStream())) {
             
             if(searchField.getText() != null && searchField.getText().isBlank() == false){
                 String toSend = searchField.getText();
-                pr.println(toSend);
+                toServer.println(toSend);
+                toServer.println(SideWindowSettings.getNumOfResultsToShow());
                 ArrayList<SearchResult> results = new ArrayList<>();
                 SearchResult s = (SearchResult)fromServer.readObject();
 				while(s != null){
