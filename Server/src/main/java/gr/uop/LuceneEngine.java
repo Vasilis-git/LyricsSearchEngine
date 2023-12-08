@@ -21,9 +21,9 @@ public class LuceneEngine {
     private static final String rawdataDir =      "Server/src/main/java/gr/uop/rawdataDir";
     private static final String modifiedDataDir = "Server/src/main/java/gr/uop/modifiedDataDir";
     public static final String resultsFile =      "Server/src/main/java/gr/uop/results.obj";
-    public static final String songsFile  = modifiedDataDir+"/songsM.csv";
-    public static final String albumsFile = modifiedDataDir+"/albumsM.csv";
-    public static final String lyricsFile = modifiedDataDir+"/lyricsM.csv";
+    public static final String songsFilePath  = modifiedDataDir+"/songsM.csv";
+    public static final String albumsFilePath = modifiedDataDir+"/albumsM.csv";
+    public static final String lyricsFilePath = modifiedDataDir+"/lyricsM.csv";
     private Indexer indexer;
     private Searcher searcher;
     private final int MAX_RESULTS;
@@ -53,7 +53,7 @@ public class LuceneEngine {
         for (File file : files) {
             if(!file.isDirectory() && !file.isHidden() && file.exists() && file.canRead() && filter.accept(file)){
                 if(file.getName().equalsIgnoreCase("songs.csv")){//preprocessing for songs
-                    File songs = new File(songsFile);
+                    File songs = new File(songsFilePath);
                     songs.createNewFile();
                     pr = new PrintWriter(songs);
                     scan = new Scanner(file);
@@ -80,6 +80,36 @@ public class LuceneEngine {
                     }
 
                 }else if(file.getName().equalsIgnoreCase("albums.csv")){//preprocessing for albums
+                    File albums = new File(albumsFilePath);
+                    albums.createNewFile();
+                    pr = new PrintWriter(albums);
+                    scan = new Scanner(file);
+                    int count = 0;
+                    while(scan.hasNext()){
+                        String line = scan.nextLine();
+                        StringTokenizer tok = new StringTokenizer(line, ",");
+                        if(count != 0){
+                            tok.nextToken();
+                        }
+                        String mightBeSingerName = tok.nextToken();//id in second column might be missing
+                        String singerName;
+                        try{
+                            Integer.parseInt(mightBeSingerName);
+                            singerName = tok.nextToken();
+                        }catch(NumberFormatException e){
+                            if(mightBeSingerName.equalsIgnoreCase("id")){
+                                singerName = tok.nextToken();
+                            }else{singerName = mightBeSingerName;}
+                        } 
+                        String albumName = tok.nextToken();
+                        String albumType = tok.nextToken();
+                        String albumYear = tok.nextToken();
+                        if(!singerName.equalsIgnoreCase("singer_name")){
+                            singerName = singerName.substring(0, singerName.indexOf(" Lyrics"));
+                        }
+                        pr.println(singerName+","+albumName+","+albumType+","+albumYear);
+                        count += 1;
+                    }
 
                 }else{//preprocessing for lyrics
 
