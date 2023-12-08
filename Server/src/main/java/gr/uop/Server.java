@@ -8,12 +8,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Scanner;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 
 public class Server {
@@ -86,16 +89,28 @@ public class Server {
             SearchResult s1 = new SearchResult(read, read+" "+read);
             SearchResult s2 = new SearchResult(read+"1 "+read, read+"1 "+read+" "+ read+"abc "+read+" 123"+read);
             
-            ArrayList<SearchResult> results = new ArrayList<>();
-            sendData(toClient, results);
+            ArrayList<SearchResult> dataStored = new ArrayList<>();
+            dataStored.add(s1);
+            dataStored.add(s2);
+            sendData(toClient, dataStored);
 
             //receive new data from client, and delete from storage space
+            ArrayList<SearchResult> clientData = new ArrayList<>();
+            receiveData(fromClient, clientData);
 
             clientSocket.close();
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    private static void receiveData(ObjectInputStream fromClient, ArrayList<SearchResult> clientData) throws ClassNotFoundException, IOException {
+        do{
+            SearchResult s = (SearchResult)fromClient.readObject();
+            if(s == null){break;}
+            clientData.add(s);
+        }while(true);
     }
 
     private static void sendData(ObjectOutputStream toClient, ArrayList<SearchResult> results) throws IOException{
@@ -117,12 +132,18 @@ public class Server {
 
 
             //test objects, must send search results here.
-            SearchResult s1 = new SearchResult(read, read+" "+read);
-            SearchResult s2 = new SearchResult(read+"1 "+read, read+"1 "+read+" "+ read+"abc "+read+" 123"+read);
+            LuceneEngine luceneEngine;
+            try {
+                luceneEngine = new LuceneEngine();
+                luceneEngine.createIndex();
+                luceneEngine.search(read);
+            } catch (IOException | ParseException e) {
+                e.printStackTrace();
+            }
+            
             
             ArrayList<SearchResult> results = new ArrayList<>();
-            results.add(s1);
-            results.add(s2);  
+
             sendData(toClient, results);
 
             clientSocket.close();
