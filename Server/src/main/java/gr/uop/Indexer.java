@@ -24,10 +24,7 @@ public class Indexer {
     public Indexer(String indexdir) throws IOException {
          //this directory will contain the indexes
         Path indexPath = Paths.get(indexdir);
-        if(!Files.exists(indexPath)) {
-            Files.createDirectory(indexPath);
-        }
-        //Path indexPath = Files.createTempDirectory(indexdir);
+        Files.createDirectories(indexPath);
         Directory indexDirectory = FSDirectory.open(indexPath);
         //create the indexer
         IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());

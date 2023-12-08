@@ -132,10 +132,7 @@ public class Server {
             int max_res = Integer.parseInt(numStr);
             System.out.println("Front-end sent: '"+read+"' at "+getCurrentTime());
             System.out.println("Search for: ["+max_res+"] top results (0 means all there are)\n");
-            //client must send query AND MAX_RESULTS
 
-
-            //test objects, must send search results here.
             LuceneEngine luceneEngine;
             try {
                 luceneEngine = new LuceneEngine(max_res);
@@ -145,7 +142,7 @@ public class Server {
                 e.printStackTrace();
             }
             
-            
+            //must send results to client
             ArrayList<SearchResult> results = new ArrayList<>();
 
             sendData(toClient, results);

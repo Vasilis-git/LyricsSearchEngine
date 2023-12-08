@@ -37,7 +37,13 @@ public class Searcher {
         try {
             query = queryParser.parse(searchQuery);
             System.out.println("query: "+ query.toString());
-            return indexSearcher.search(query, parent.getMaxResultsCount());
+            int show = 0;
+            if(parent.getMaxResultsCount() == 0){
+                show = IndexSearcher.getMaxClauseCount();
+            }else{
+                show = parent.getMaxResultsCount();
+            }
+            return indexSearcher.search(query, show);
         } catch (org.apache.lucene.queryparser.classic.ParseException e) {
             e.printStackTrace();
         }

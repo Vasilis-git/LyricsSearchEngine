@@ -1,5 +1,7 @@
 # other
 *.obj
+indexDir/
+modifiedDataDir/
 
 # Java
 
