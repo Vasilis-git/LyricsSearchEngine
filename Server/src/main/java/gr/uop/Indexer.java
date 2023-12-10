@@ -13,6 +13,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
@@ -20,10 +21,11 @@ import org.apache.lucene.store.FSDirectory;
 
 public class Indexer {
     private IndexWriter writer;
+    private Path indexPath;
 
     public Indexer(String indexdir) throws IOException {
          //this directory will contain the indexes
-        Path indexPath = Paths.get(indexdir);
+        indexPath = Paths.get(indexdir);
         Files.createDirectories(indexPath);
         Directory indexDirectory = FSDirectory.open(indexPath);
         //create the indexer
@@ -32,14 +34,16 @@ public class Indexer {
     }
 
     public int createIndex(String datadir, TextFileFilter textFileFilter) throws IOException {
-        //get all files in the data directory
-        File[] files = new File(datadir).listFiles();
-        for (File file : files) {
-            if(!file.isDirectory() && !file.isHidden() && file.exists() && file.canRead() && textFileFilter.accept(file)){
-                indexFile(file);
+        if(!DirectoryReader.indexExists(FSDirectory.open(indexPath))){//create index only if it does not exist
+            //get all files in the data directory
+            File[] files = new File(datadir).listFiles();
+            for (File file : files) {
+                if(!file.isDirectory() && !file.isHidden() && file.exists() && file.canRead() && textFileFilter.accept(file)){
+                    indexFile(file);
+                }
             }
         }
-        return writer.numRamDocs();
+        return writer.numRamDocs();//will return 0 if index already exists, since no file was indexed
     }
 
     private void indexFile(File file) throws IOException {
