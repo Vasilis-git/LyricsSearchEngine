@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Scanner;
 import java.time.format.DateTimeFormatter;
 
-
+// gioy ti leei
 public class Server {
     
     //public final static int QUERY_PORT = 7777, DATA_PORT = QUERY_PORT+1, FILE_PORT=DATA_PORT+1;
