@@ -15,6 +15,7 @@ import java.util.StringTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.store.FSDirectory;
 
 public class LuceneEngine {
     private static final String indexDir =        "Server/src/main/java/gr/uop/indexDir";
@@ -48,6 +49,8 @@ public class LuceneEngine {
         PrintWriter pr;
         Scanner scan;
         Path modifiedDataPath = Paths.get(modifiedDataDir);
+        File dir = new File(modifiedDataDir);
+        if(dir.isDirectory() && dir.exists()){System.out.println("preprocessesed data exists");return;}
         Files.createDirectories(modifiedDataPath);
         File[] files = new File(rawdataDir).listFiles();
         for (File file : files) {
@@ -130,7 +133,7 @@ public class LuceneEngine {
             System.out.println("File: " +doc.get(LuceneConstants.FILE_PATH));
         }
         searcher.close();
-        
+        /*
         try {//delete all files under indexDir
             Files.walk(Paths.get(indexDir)).sorted(Comparator.reverseOrder()).forEach(path -> {
                 try {
@@ -141,7 +144,7 @@ public class LuceneEngine {
             });
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public int getMaxResultsCount() {
