@@ -26,11 +26,12 @@ public class Searcher {
 
     public Searcher(String indexdir, LuceneEngine luceneEngine) throws IOException {
         this.parent = luceneEngine;
+        System.out.println(parent.getMaxResultsCount());
         Path indexPath = Paths.get(indexdir);
         indexDirectory = FSDirectory.open(indexPath);
         indexReader = DirectoryReader.open(indexDirectory);
         indexSearcher = new IndexSearcher(indexReader);
-        queryParser = new QueryParser(LuceneConstants.CONTENTS, new StandardAnalyzer());
+        queryParser = new QueryParser(LuceneConstants.albumNameField, new StandardAnalyzer());
     }
 
     public TopDocs search(String searchQuery) throws IOException {
@@ -42,7 +43,7 @@ public class Searcher {
                 show = IndexSearcher.getMaxClauseCount();
             }else{
                 show = parent.getMaxResultsCount();
-            }
+            }System.out.println(show);
             return indexSearcher.search(query, show);
         } catch (org.apache.lucene.queryparser.classic.ParseException e) {
             e.printStackTrace();

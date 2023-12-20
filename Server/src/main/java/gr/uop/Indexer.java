@@ -4,11 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVFormat.Builder;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -16,6 +20,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -29,7 +34,7 @@ public class Indexer {
         Files.createDirectories(indexPath);
         Directory indexDirectory = FSDirectory.open(indexPath);
         //create the indexer
-        IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
+        IndexWriterConfig config = new IndexWriterConfig(new WhitespaceAnalyzer());
         writer = new IndexWriter(indexDirectory, config);
     }
 
@@ -53,20 +58,66 @@ public class Indexer {
     }
 
     private Document getDocument(File file) throws IOException {
-        Document document = new Document();
-        //index file contents
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        String currentLine = br.readLine().toString();
-        Field contentField = new Field(LuceneConstants.CONTENTS, currentLine, TextField.TYPE_STORED);
-        //index file name
-        Field fileNameField = new Field(LuceneConstants.FILE_NAME, file.getName(), StringField.TYPE_STORED);
-        //index file path
-        Field filePathField = new Field(LuceneConstants.FILE_PATH, file.getCanonicalPath(), StringField.TYPE_STORED);
-        document.add(contentField);
-        document.add(fileNameField);
-        document.add(filePathField);
-        br.close();
-        return document;
+        Document doc = new Document();
+        Builder csvInFileBuilder = CSVFormat.DEFAULT.builder();
+        csvInFileBuilder.setSkipHeaderRecord(true);
+        Reader in = new FileReader(file);
+        Iterable<CSVRecord> records;
+        CSVFormat inCSVFormat;
+        String singerName, link;
+
+        switch(file.getName()){
+            case LuceneConstants.albumsRawFilename:{
+                csvInFileBuilder.setHeader(LuceneConstants.albumsRawHeaders);
+                inCSVFormat = csvInFileBuilder.build();
+                records = inCSVFormat.parse(in);
+                for(CSVRecord r: records){
+                    singerName = configureArtistName(r.get(LuceneConstants.singerNameField));
+                    doc.add(new TextField(LuceneConstants.singerNameField, singerName, Field.Store.YES));
+                    doc.add(new TextField(LuceneConstants.albumNameField, r.get(LuceneConstants.albumNameField), Field.Store.YES));
+                    doc.add(new TextField(LuceneConstants.albumTypeField, r.get(LuceneConstants.albumTypeField), Field.Store.YES));
+                    doc.add(new TextField(LuceneConstants.albumYearField, r.get(LuceneConstants.albumYearField), Field.Store.YES));
+                }
+                break;
+            }
+            case LuceneConstants.lyricsRawFilename:{
+                csvInFileBuilder.setHeader(LuceneConstants.lyricsRawHeaders);
+                inCSVFormat = csvInFileBuilder.build();
+                records = inCSVFormat.parse(in);
+                for(CSVRecord r: records){
+                    link = configureLink(r.get(LuceneConstants.linkFieldName));
+                    doc.add(new TextField(LuceneConstants.HrefFieldName, link, Field.Store.YES));
+                    doc.add(new TextField(LuceneConstants.artistNameField, r.get(LuceneConstants.artistNameField), Field.Store.YES));
+                    doc.add(new TextField(LuceneConstants.songNameField, r.get(LuceneConstants.songNameField), Field.Store.YES));
+                    doc.add(new TextField(LuceneConstants.lyricsFieldName, r.get(LuceneConstants.lyricsFieldName), Field.Store.YES));
+                }
+                break;
+            }
+            default:{//songs.csv
+                csvInFileBuilder.setHeader(LuceneConstants.songsRawHeaders);
+                inCSVFormat = csvInFileBuilder.build();
+                records = inCSVFormat.parse(in);
+                for(CSVRecord r: records){
+                    singerName = configureArtistName(r.get(LuceneConstants.singerNameField));
+                    doc.add(new TextField(LuceneConstants.singerNameField, singerName, Field.Store.YES));
+                    doc.add(new TextField(LuceneConstants.songNameField, r.get(LuceneConstants.songNameField), Field.Store.YES));
+                    link = configureLink(r.get(LuceneConstants.HrefFieldName));
+                    doc.add(new TextField(LuceneConstants.HrefFieldName, r.get(LuceneConstants.HrefFieldName), Field.Store.YES));
+                }
+            }
+        }
+        return doc;
+    }
+
+    private String configureArtistName(String artist) {
+        artist = artist.substring(0, artist.indexOf(" Lyrics"));
+        return artist;
+    }
+
+    private String configureLink(String link) {
+        link = link.substring(2);
+        link = LuceneConstants.websiteLink+link;
+        return link;
     }
 
     public void close() throws IOException {

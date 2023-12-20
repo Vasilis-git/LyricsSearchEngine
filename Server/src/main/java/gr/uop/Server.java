@@ -13,7 +13,6 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -22,10 +21,16 @@ import java.util.Scanner;
 public class Server {
     
     //public final static int QUERY_PORT = 7777, DATA_PORT = QUERY_PORT+1, FILE_PORT=DATA_PORT+1;
+    private static LuceneEngine luceneEngine = new LuceneEngine(0);//0 means all there are
     
 
     public static void main(String[] args) {
-        
+        //create index at startup
+        try{
+            luceneEngine.createIndex();
+        }catch(IOException e){
+            System.out.println("Indexing failed!");
+        }
         
         //load port constants
         Path filePath = Paths.get("shared.txt");
@@ -133,10 +138,8 @@ public class Server {
             System.out.println("Front-end sent: '"+read+"' at "+getCurrentTime());
             System.out.println("Search for: ["+max_res+"] top results (0 means all there are)\n");
 
-            LuceneEngine luceneEngine;
             try {
-                luceneEngine = new LuceneEngine(max_res);
-                luceneEngine.createIndex();
+                luceneEngine.setMaxResults(max_res);
                 luceneEngine.search(read);
             } catch (IOException | ParseException e) {
                 e.printStackTrace();
