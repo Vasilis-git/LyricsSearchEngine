@@ -163,19 +163,16 @@ public class SearchEngineWindow extends BorderPane{
                 String toSend = searchField.getText();
                 toServer.println(toSend);
                 toServer.println(SideWindowSettings.getNumOfResultsToShow());
+                toServer.println(SideWindowSettings.getSearchField());
                 ArrayList<SearchResult> results = new ArrayList<>();
                 SearchResult s = (SearchResult)fromServer.readObject();
 				while(s != null){
                     results.add(s);
                     s = (SearchResult)fromServer.readObject();
 				}
-                int keep = SideWindowSettings.getNumOfResultsToShow();
-                int count = 0;
                 for(SearchResult si :results){
                     TitledPane p = createResultPane(si, toSend);
                     resultsAreaContent.getChildren().add(p);
-                    count += 1;
-                    if(keep == count){break;}
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -188,7 +185,7 @@ public class SearchEngineWindow extends BorderPane{
         Text contentText = new Text(si.getContent());
         contentText.setFont(new Font(17));
 
-        TextFlow TextParts = new TextFlow();
+        /*TextFlow TextParts = new TextFlow();
         String contentString = contentText.getText();
         StringTokenizer tokenizer = new StringTokenizer(contentString, " ");
         while(tokenizer.hasMoreTokens()){
@@ -217,14 +214,15 @@ public class SearchEngineWindow extends BorderPane{
                     break;
                 }
             }
-        }
+        }*/
     
+        TextFlow TextParts = new TextFlow(contentText);
         TextParts.setPadding(new Insets(2, 0, 5, 15));
         TitledPane p = new TitledPane(si.getTitle(), TextParts);
         TextParts.setTextAlignment(TextAlignment.LEFT);
         p.setTextFill(Paint.valueOf(Color.BLUE.toString()));//title only
         p.setUnderline(true);//title only
-        p.setCollapsible(false);
+        p.setCollapsible(true);
         p.setFont(new Font(20));
         /*********/
         return p;

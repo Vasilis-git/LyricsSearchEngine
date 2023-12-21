@@ -1,23 +1,33 @@
 package gr.uop;
 
+import java.util.Optional;
+
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 
 public class SideWindowSettings extends SideWindow{
     private static int numberOfResults = 0;//0 means all there are
     private static TextField number;
-    private boolean changeToEmpty;
+    private static String searchField;
+    private boolean numberTextChanged = false, FieldChoiceChange = false;;
 
     public SideWindowSettings(Node previous, BorderPane main){
         super();
@@ -33,18 +43,52 @@ public class SideWindowSettings extends SideWindow{
         Label prompt = new Label("Show");
         Label promptContinued = new Label("top results");
         number = new TextField();
-        number.setMaxWidth(40);
+        number.maxWidth(3);
         prompt.setFont(new Font(FONT_SIZE));
         promptContinued.setFont(new Font(FONT_SIZE));
         number.setFont(new Font(FONT_SIZE));
         number.setText(""+numberOfResults);
         number.setAlignment(Pos.TOP_CENTER);
+        number.getStyleClass().add("-fx-text-alignment: center;");
         input.add(prompt, 0, 1);
         input.add(number, 1, 1);
         input.add(promptContinued, 2, 1);
+        GridPane.setVgrow(number, Priority.ALWAYS);
+
+        Label searchLabel = new Label("Search in:");
+        searchLabel.setFont(new Font(FONT_SIZE));
+        input.add(searchLabel, 0, 2);
+        RadioButton titleButton = new RadioButton("title");//must be same as indexTitle and indexBody in LuceneConstants, server-side
+        RadioButton bodyButton = new RadioButton("body");
+        titleButton.setFont(new Font(FONT_SIZE));
+        bodyButton.setFont(new Font(FONT_SIZE));
+        ToggleGroup tg = new ToggleGroup();
+        titleButton.setToggleGroup(tg);
+        bodyButton.setToggleGroup(tg);
+        titleButton.setSelected(true);
+        searchField = titleButton.getText();
+
+        input.add(titleButton, 1, 2);
+        input.add(bodyButton, 1, 3);
+
+
         getChildren().add(input);
         addButtonListToWindow();
         setSeparatorToBottom();
+
+        tg.selectedToggleProperty().addListener(new ChangeListener<Toggle>(){
+
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
+                FieldChoiceChange = true;
+                if(newValue == titleButton){
+                    searchField = titleButton.getText();
+                }else{
+                    searchField = bodyButton.getText();
+                }
+            }
+
+        });
 
         //first time setup
         number.setText(null);
@@ -58,17 +102,42 @@ public class SideWindowSettings extends SideWindow{
                 }
             }
         });
+        number.textProperty().addListener((obs, oldV, newV)->{
+            numberTextChanged = true;
+        });
         setOKfunctionality((e)->{
-            handleNumberInput(previous, main);
+            Alert confirm =  new Alert(AlertType.CONFIRMATION);
+            confirm.setHeaderText("Συνέχεια με τις τρέχων ρυθμίσεις;");
+            Optional<ButtonType> choice = confirm.showAndWait();
+            if(choice.get() == ButtonType.OK){
+                main.setTop(previous);
+            }
+            if(numberTextChanged){
+                handleNumberInput(previous, main);
+                numberTextChanged = false;
+            }
         });
         setCANCELfunctionality((e)->{
             number.setText(""+numberOfResults);
+            if(numberOfResults == 0){
+                number.setText(null);
+                number.setPromptText("all");
+            }
             main.setTop(previous);
+            if(FieldChoiceChange){
+                if(bodyButton.isSelected() == true){
+                    titleButton.setSelected(true);
+                }else{
+                    bodyButton.setSelected(true);
+                }
+                FieldChoiceChange = false;
+            }
         });
     }
+
     private void handleNumberInput(Node previous, BorderPane main) {
         String text = number.getText();
-        number.getPromptText();
+        String prompt = number.getPromptText();
         try{
             int n = Integer.parseInt(text);
             if(n < 0){
@@ -79,28 +148,32 @@ public class SideWindowSettings extends SideWindow{
                 numberOfResults = n;
                 Alert info = new Alert(AlertType.INFORMATION);
                 info.setHeaderText("Επιτυχής αλλαγή");
-                if(n > 0){info.setContentText("Θα βλέπεις μόνο τα "+n+" top αποτελέσματα απο την επόμενη αναζήτηση.");}
+                if(n > 0){info.setContentText("Θα βλέπεις μόνο τα "+n+" top αποτελέσματα απο την επόμενη αναζήτηση.");
+                number.maxWidth(number.getText().length());}
                 else{
                     info.setContentText("Θα βλέπεις όλα τα αποτελέσματα.");
-                    changeToEmpty = true;
+                    number.setText(null);
+                    number.setPromptText("all");
+                    number.maxWidth(number.getPromptText().length());
                 }
                 info.showAndWait();
-                if(changeToEmpty){
-                    number.setText(null);
-                    changeToEmpty = false;
-                }
             }
         }catch(NumberFormatException nfe){
-            if(text.equalsIgnoreCase("all")){
+            if((prompt.equalsIgnoreCase("all") && text == null) || text.equalsIgnoreCase("all")){
                 Alert info = new Alert(AlertType.INFORMATION);
                 info.setHeaderText("Επιτυχής αλλαγή");
                 info.setContentText("Θα βλέπεις όλα τα αποτελέσματα.");
                 info.showAndWait();
                 number.setText(null);
+                number.maxWidth(number.getPromptText().length());
             }else{
                 Alert NaN = new Alert(AlertType.ERROR);
                 NaN.setContentText("Δεν δόθηκε αριθμός.");
                 number.setText(""+numberOfResults);
+                if(numberOfResults == 0){
+                    number.setText(null);
+                    number.setPromptText("all");
+                }
                 NaN.showAndWait();
             }
         }
@@ -109,5 +182,9 @@ public class SideWindowSettings extends SideWindow{
 
     public static int getNumOfResultsToShow(){
         return numberOfResults;
+    }
+
+    public static String getSearchField() {
+        return searchField;
     }
 }

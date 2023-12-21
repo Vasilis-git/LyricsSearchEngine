@@ -1,6 +1,5 @@
 package gr.uop;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -8,19 +7,19 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVFormat.Builder;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -34,7 +33,7 @@ public class Indexer {
         Files.createDirectories(indexPath);
         Directory indexDirectory = FSDirectory.open(indexPath);
         //create the indexer
-        IndexWriterConfig config = new IndexWriterConfig(new WhitespaceAnalyzer());
+        IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
         writer = new IndexWriter(indexDirectory, config);
     }
 
@@ -53,18 +52,20 @@ public class Indexer {
 
     private void indexFile(File file) throws IOException {
         System.out.println("Indexing "+file.getCanonicalPath());
-        Document document = getDocument(file);
-        writer.addDocument(document);
+        Document[] documents = getDocument(file);
+        for(Document d: documents){
+            writer.addDocument(d);
+        }
     }
 
-    private Document getDocument(File file) throws IOException {
-        Document doc = new Document();
+    private Document[] getDocument(File file) throws IOException {
+        ArrayList<Document> docs = new ArrayList<>();
         Builder csvInFileBuilder = CSVFormat.DEFAULT.builder();
         csvInFileBuilder.setSkipHeaderRecord(true);
         Reader in = new FileReader(file);
         Iterable<CSVRecord> records;
         CSVFormat inCSVFormat;
-        String singerName, link;
+        String singerName, link, songName;
 
         switch(file.getName()){
             case LuceneConstants.albumsRawFilename:{
@@ -72,11 +73,15 @@ public class Indexer {
                 inCSVFormat = csvInFileBuilder.build();
                 records = inCSVFormat.parse(in);
                 for(CSVRecord r: records){
+                    Document d = new Document();
+                    String albumName, albumType, albumYear;
                     singerName = configureArtistName(r.get(LuceneConstants.singerNameField));
-                    doc.add(new TextField(LuceneConstants.singerNameField, singerName, Field.Store.YES));
-                    doc.add(new TextField(LuceneConstants.albumNameField, r.get(LuceneConstants.albumNameField), Field.Store.YES));
-                    doc.add(new TextField(LuceneConstants.albumTypeField, r.get(LuceneConstants.albumTypeField), Field.Store.YES));
-                    doc.add(new TextField(LuceneConstants.albumYearField, r.get(LuceneConstants.albumYearField), Field.Store.YES));
+                    albumName =  r.get(LuceneConstants.albumNameField);
+                    albumType =  r.get(LuceneConstants.albumTypeField);
+                    albumYear = r.get(LuceneConstants.albumYearField);
+                    d.add(new TextField(LuceneConstants.indexTitle, albumName, Field.Store.YES));
+                    d.add(new TextField(LuceneConstants.indexBody, singerName+", "+albumType+", "+albumYear, Field.Store.YES));
+                    docs.add(d);
                 }
                 break;
             }
@@ -85,11 +90,14 @@ public class Indexer {
                 inCSVFormat = csvInFileBuilder.build();
                 records = inCSVFormat.parse(in);
                 for(CSVRecord r: records){
+                    Document d = new Document();
                     link = configureLink(r.get(LuceneConstants.linkFieldName));
-                    doc.add(new TextField(LuceneConstants.HrefFieldName, link, Field.Store.YES));
-                    doc.add(new TextField(LuceneConstants.artistNameField, r.get(LuceneConstants.artistNameField), Field.Store.YES));
-                    doc.add(new TextField(LuceneConstants.songNameField, r.get(LuceneConstants.songNameField), Field.Store.YES));
-                    doc.add(new TextField(LuceneConstants.lyricsFieldName, r.get(LuceneConstants.lyricsFieldName), Field.Store.YES));
+                    singerName = configureArtistName(r.get(LuceneConstants.artistNameField));
+                    songName = r.get(LuceneConstants.songNameField);
+                    String lyrics = r.get(LuceneConstants.lyricsFieldName);
+                    d.add(new TextField(LuceneConstants.indexTitle, singerName+", "+songName, Field.Store.YES));
+                    d.add(new TextField(LuceneConstants.indexBody, link+"\n"+lyrics, Field.Store.YES));
+                    docs.add(d);
                 }
                 break;
             }
@@ -98,15 +106,22 @@ public class Indexer {
                 inCSVFormat = csvInFileBuilder.build();
                 records = inCSVFormat.parse(in);
                 for(CSVRecord r: records){
+                    Document d = new Document();
                     singerName = configureArtistName(r.get(LuceneConstants.singerNameField));
-                    doc.add(new TextField(LuceneConstants.singerNameField, singerName, Field.Store.YES));
-                    doc.add(new TextField(LuceneConstants.songNameField, r.get(LuceneConstants.songNameField), Field.Store.YES));
+                    songName = r.get(LuceneConstants.songNameField);
                     link = configureLink(r.get(LuceneConstants.HrefFieldName));
-                    doc.add(new TextField(LuceneConstants.HrefFieldName, r.get(LuceneConstants.HrefFieldName), Field.Store.YES));
+                    d.add(new TextField(LuceneConstants.indexTitle, songName, Field.Store.YES));
+                    d.add(new TextField(LuceneConstants.indexBody, singerName+", "+link, Field.Store.YES));
+                    docs.add(d);
                 }
             }
         }
-        return doc;
+        Document[] ret = new Document[docs.size()];
+        Iterator<Document> it = docs.iterator();
+        for(int i = 0; i < ret.length; i++){
+            ret[i] = it.next();
+        }
+        return ret;
     }
 
     private String configureArtistName(String artist) {

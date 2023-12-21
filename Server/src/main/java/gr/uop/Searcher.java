@@ -3,6 +3,10 @@ package gr.uop;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -13,6 +17,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -26,24 +31,23 @@ public class Searcher {
 
     public Searcher(String indexdir, LuceneEngine luceneEngine) throws IOException {
         this.parent = luceneEngine;
-        System.out.println(parent.getMaxResultsCount());
         Path indexPath = Paths.get(indexdir);
         indexDirectory = FSDirectory.open(indexPath);
         indexReader = DirectoryReader.open(indexDirectory);
         indexSearcher = new IndexSearcher(indexReader);
-        queryParser = new QueryParser(LuceneConstants.albumNameField, new StandardAnalyzer());
+        queryParser = new QueryParser(parent.getSearchField(), new StandardAnalyzer());
     }
 
     public TopDocs search(String searchQuery) throws IOException {
         try {
             query = queryParser.parse(searchQuery);
-            System.out.println("query: "+ query.toString());
             int show = 0;
             if(parent.getMaxResultsCount() == 0){
                 show = IndexSearcher.getMaxClauseCount();
             }else{
                 show = parent.getMaxResultsCount();
             }System.out.println(show);
+
             return indexSearcher.search(query, show);
         } catch (org.apache.lucene.queryparser.classic.ParseException e) {
             e.printStackTrace();

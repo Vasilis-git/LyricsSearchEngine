@@ -22,4 +22,6 @@ public interface LuceneConstants {
     public final String albumYearField = "year";
     public final String lyricsFieldName = "lyrics";    
 
+    public final String indexTitle = "title";
+    public final String indexBody = "body";
 }

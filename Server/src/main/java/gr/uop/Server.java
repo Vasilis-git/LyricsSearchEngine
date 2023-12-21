@@ -134,21 +134,23 @@ public class Server {
                 
             String read = input.nextLine();
             String numStr = input.nextLine();
+            String searchField = input.nextLine();
             int max_res = Integer.parseInt(numStr);
             System.out.println("Front-end sent: '"+read+"' at "+getCurrentTime());
-            System.out.println("Search for: ["+max_res+"] top results (0 means all there are)\n");
+            System.out.println("Search for: ["+max_res+"] top results (0 means all there are) in field: ["+searchField+"]\n");
 
             try {
+                //must send results to client
+                ArrayList<SearchResult> results = new ArrayList<>();
                 luceneEngine.setMaxResults(max_res);
-                luceneEngine.search(read);
+                luceneEngine.setSearchField(searchField);
+                results = luceneEngine.search(read);
+                sendData(toClient, results);
             } catch (IOException | ParseException e) {
                 e.printStackTrace();
             }
             
-            //must send results to client
-            ArrayList<SearchResult> results = new ArrayList<>();
-
-            sendData(toClient, results);
+            
 
             clientSocket.close();
         } catch (IOException e) {
