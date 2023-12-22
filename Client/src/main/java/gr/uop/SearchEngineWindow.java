@@ -122,12 +122,12 @@ public class SearchEngineWindow extends BorderPane{
             dip = Integer.parseInt(port_constants.next());
 
         } catch (NumberFormatException | IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             System.exit(0);
         }
         QUERY_PORT = qp;
         DATA_INPUT_PORT = dip;
+
         add.setOnAction((e)->{
             SideWindowAdd addSong = new SideWindowAdd(this.getCenter(), this, DATA_INPUT_PORT);
             this.setCenter(addSong);

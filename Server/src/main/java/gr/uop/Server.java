@@ -6,6 +6,7 @@ package gr.uop;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -34,7 +35,7 @@ public class Server {
         
         //load port constants
         Path filePath = Paths.get("shared.txt");
-        final int QUERY_PORT, DATA_INPUT_PORT, FILE_PORT;
+        final int QUERY_PORT, SINGLE_DATA_INPUT_PORT, FILE_PORT;
         int qp = 0,dip = 0,fp = 0;
         try (Scanner port_constants = new Scanner(filePath)) {
             qp = Integer.parseInt(port_constants.next());
@@ -47,7 +48,7 @@ public class Server {
             System.exit(0);
         }
         QUERY_PORT = qp;
-        DATA_INPUT_PORT = dip;
+        SINGLE_DATA_INPUT_PORT = dip;
         FILE_PORT = fp;
         //if qp, dip and fp don't change, it means an exception was thrown and the program will stop
 
@@ -57,13 +58,12 @@ public class Server {
         System.out.println(dtf.format(now)+"\n\n");
         
         new Thread(()->{
-            try (ServerSocket serverSocket = new ServerSocket(DATA_INPUT_PORT)) {
+            try (ServerSocket serverSocket = new ServerSocket(SINGLE_DATA_INPUT_PORT)) {
                 while(true){
                     Socket clientSocket = serverSocket.accept();
-                    handleDataInputConnection(clientSocket);
+                    handleSingleDataInputConnection(clientSocket);
                 }
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }).start();
@@ -76,6 +76,20 @@ public class Server {
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private static void handleSingleDataInputConnection(Socket clientSocket) {//client will send a SongInfo to add, must send response back
+        try(ObjectInputStream fromClient = new ObjectInputStream(clientSocket.getInputStream());
+            ObjectOutputStream toClient = new ObjectOutputStream(clientSocket.getOutputStream())){    
+                SongInfo si = (SongInfo)fromClient.readObject();
+                System.out.println("Front-end sent data to add: '"+si+"' at "+getCurrentTime());
+                String response = luceneEngine.addToIndex(si);
+                toClient.writeObject(response);
+                System.out.println("Sent response: "+response);
+                clientSocket.close();
+        }catch(IOException | ClassNotFoundException e){
             e.printStackTrace();
         }
     }
@@ -154,7 +168,6 @@ public class Server {
 
             clientSocket.close();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

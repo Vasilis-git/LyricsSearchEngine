@@ -4,10 +4,14 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -76,19 +80,30 @@ public class SideWindowAdd extends SideWindow{
                 confirm.setContentText("Συνέχεια;");
                 Optional<ButtonType> res = confirm.showAndWait();
                 if(res.isPresent() && res.get() == yesType){
-                    SongInfo toAdd = new SongInfo(labelFieldComb.get("Τίτλος τραγουδιού:").getText(), labelFieldComb.get("Όνομα καλλιτέχνη/συγκροτήματος:").getText(), labelFieldComb.get("url των στίχων του τραγουδιού(azlyrics.com):").getText());
-                    try (Socket clientSocket = new Socket("localhost", port)) {
-                        ObjectOutputStream ous = new ObjectOutputStream(clientSocket.getOutputStream());
-                        ous.writeObject(toAdd);
-                        ous.close();
-                    }catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
+                    try(Socket clientSocket = new Socket("localhost", port);
+                        ObjectOutputStream toServer = new ObjectOutputStream(clientSocket.getOutputStream());
+                        ObjectInputStream fromServer = new ObjectInputStream(clientSocket.getInputStream())){
+                        SongInfo toAdd = new SongInfo(labelFieldComb.get("Τίτλος τραγουδιού:").getText(), labelFieldComb.get("Όνομα καλλιτέχνη/συγκροτήματος:").getText(), labelFieldComb.get("url των στίχων του τραγουδιού(azlyrics.com):").getText());
+                        toServer.writeObject(toAdd);
+                        String response = (String)fromServer.readObject();
+                        switch(response){
+                            case "OK":{
+                                Alert info = new Alert(AlertType.INFORMATION);
+                                info.setHeaderText("Η εισαγωγή έγινε με επιτυχία");
+                                info.show();
+                                break;
+                            }
+                            default:{
+                                Alert error = new Alert(AlertType.ERROR);
+                                error.setHeaderText("Η εισαγωγή απέτυχε");
+                                error.setContentText(response);
+                                error.show();
+                            }
+                        }
+                    }catch(IOException | ClassNotFoundException e1){
+
                     }
                     main.setCenter(previous);
-                    Alert info = new Alert(AlertType.INFORMATION);
-                    info.setHeaderText("Η εισαγωγή έγινε με επιτυχία");
-                    info.show();
                 } 
         });
         setCANCELfunctionality((l)->{

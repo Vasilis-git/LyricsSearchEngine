@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -24,6 +26,18 @@ public class LuceneEngine {
     
     public void setMaxResults(int maxRes){
         MAX_RESULTS = maxRes;
+    }
+
+    public String addToIndex(SongInfo si) {
+        Document songD = new Document();//must be same format as adding songs from the csv
+        songD.add(new TextField(LuceneConstants.indexTitle, si.getSongTitle(), Field.Store.YES));
+        songD.add(new TextField(LuceneConstants.indexBody, si.getNameOfArtist()+", "+si.getlyricslink(), Field.Store.YES));
+        try{
+            indexer.add(songD);
+            return "OK";
+        }catch(IOException e){
+            return "Σφάλμα στην εισαγωγή των δεδομένων";
+        }
     }
 
     public void createIndex() throws IOException {
