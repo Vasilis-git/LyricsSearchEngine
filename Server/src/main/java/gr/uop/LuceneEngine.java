@@ -1,12 +1,12 @@
 package gr.uop;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.queryparser.classic.ParseException;
 
 public class LuceneEngine {
     private Indexer indexer;
@@ -39,16 +39,20 @@ public class LuceneEngine {
     public ArrayList<SearchResult> search(String searchQuery) throws IOException, ParseException {
         searcher = new Searcher(LuceneConstants.indexDir, this);
         long startTime = System.currentTimeMillis();
-        TopDocs hits = searcher.search(searchQuery);
-        long endTime = System.currentTimeMillis();
-        System.out.println(hits.totalHits +" documents found. Time :" +(endTime - startTime));
         ArrayList<SearchResult> ret = new ArrayList<>();
-        for(ScoreDoc scoreDoc : hits.scoreDocs) {
-            Document doc = searcher.getDocument(scoreDoc);
-            //System.out.println(scoreDoc);
-            String title = doc.getField(LuceneConstants.indexTitle).stringValue();
-            String body = doc.getField(LuceneConstants.indexBody).stringValue();
-            ret.add(new SearchResult(title, body));
+        try{
+            TopDocs hits = searcher.search(searchQuery);
+            long endTime = System.currentTimeMillis();
+            System.out.println(hits.totalHits +" documents found. Time :" +(endTime - startTime));
+            for(ScoreDoc scoreDoc : hits.scoreDocs) {
+                Document doc = searcher.getDocument(scoreDoc);
+                //System.out.println(scoreDoc);
+                String title = doc.getField(LuceneConstants.indexTitle).stringValue();
+                String body = doc.getField(LuceneConstants.indexBody).stringValue();
+                ret.add(new SearchResult(title, body));
+            }
+        }catch(ParseException e){
+            ret.add(new SearchResult("Nothing to show here", "Unsupported query format."));
         }
         searcher.close();
         if(ret.size() == 0){//no results

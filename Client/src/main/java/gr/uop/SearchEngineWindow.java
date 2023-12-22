@@ -1,6 +1,5 @@
 package gr.uop;
 
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
@@ -150,8 +149,9 @@ public class SearchEngineWindow extends BorderPane{
         });
         
         searchField.textProperty().addListener((obs, oldV, newV)->{
-            if(newV.isEmpty()){//remove all results
-                resultsAreaContent.getChildren().removeAll(resultsAreaContent.getChildren());}});
+            //remove all previous results whenever the field changes
+            resultsAreaContent.getChildren().removeAll(resultsAreaContent.getChildren());
+        });
         /*******************/
     }
     private void handleSearch(int port){
