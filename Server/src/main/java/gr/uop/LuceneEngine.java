@@ -36,7 +36,7 @@ public class LuceneEngine {
         System.out.println(numIndexed+" File(s) indexed, time taken: " +(endTime-startTime)+" ms");
     }
 
-    public ArrayList<SearchResult> search(String searchQuery) throws IOException, ParseException {
+    public ArrayList<SearchResult> search(String searchQuery) throws IOException {
         searcher = new Searcher(LuceneConstants.indexDir, this);
         long startTime = System.currentTimeMillis();
         ArrayList<SearchResult> ret = new ArrayList<>();
@@ -56,7 +56,7 @@ public class LuceneEngine {
         }
         searcher.close();
         if(ret.size() == 0){//no results
-            ret.add(new SearchResult("Nothing to show here", "Your search didn't yield any results."));
+            ret.add(new SearchResult("Nothing to show here", "Your search didn't yield any results.\nConsider changing the field to search in through settings."));
         }
         return ret;
         /*

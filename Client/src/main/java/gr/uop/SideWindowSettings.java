@@ -27,9 +27,10 @@ public class SideWindowSettings extends SideWindow{
     private static int numberOfResults = 0;//0 means all there are
     private static TextField number;
     private static String searchField;
-    private boolean numberTextChanged = false, FieldChoiceChange = false;;
+    private boolean numberTextChanged = false, FieldChoiceChange = false, firstSelectedField = true;
 
     public SideWindowSettings(Node previous, BorderPane main){
+        /***Look***/
         super();
         GridPane input = new GridPane();
         input.setHgap(10);
@@ -65,8 +66,6 @@ public class SideWindowSettings extends SideWindow{
         ToggleGroup tg = new ToggleGroup();
         titleButton.setToggleGroup(tg);
         bodyButton.setToggleGroup(tg);
-        titleButton.setSelected(true);
-        searchField = titleButton.getText();
 
         input.add(titleButton, 1, 2);
         input.add(bodyButton, 1, 3);
@@ -75,12 +74,17 @@ public class SideWindowSettings extends SideWindow{
         getChildren().add(input);
         addButtonListToWindow();
         setSeparatorToBottom();
+        /***Look***/
+
+
+        /********Functionality********/
 
         tg.selectedToggleProperty().addListener(new ChangeListener<Toggle>(){
 
             @Override
             public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
-                FieldChoiceChange = true;
+                if(!firstSelectedField){FieldChoiceChange = true;}
+                firstSelectedField = false;
                 if(newValue == titleButton){
                     searchField = titleButton.getText();
                 }else{
@@ -93,6 +97,8 @@ public class SideWindowSettings extends SideWindow{
         //first time setup
         number.setText(null);
         number.setPromptText("all");
+        titleButton.setSelected(true);
+        searchField = titleButton.getText();
 
         number.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override
@@ -102,26 +108,31 @@ public class SideWindowSettings extends SideWindow{
                 }
             }
         });
+        
         number.textProperty().addListener((obs, oldV, newV)->{
             numberTextChanged = true;
         });
+
         setOKfunctionality((e)->{
             Alert confirm =  new Alert(AlertType.CONFIRMATION);
             confirm.setHeaderText("Συνέχεια με τις τρέχων ρυθμίσεις;");
             Optional<ButtonType> choice = confirm.showAndWait();
             if(choice.get() == ButtonType.OK){
                 main.setTop(previous);
-            }
-            if(numberTextChanged){
-                handleNumberInput(previous, main);
-                numberTextChanged = false;
-            }
+                if(numberTextChanged){
+                    handleNumberInput(previous, main);
+                    numberTextChanged = false;
+                }
+            }    
         });
         setCANCELfunctionality((e)->{
-            number.setText(""+numberOfResults);
-            if(numberOfResults == 0){
-                number.setText(null);
-                number.setPromptText("all");
+            if(numberTextChanged){
+                number.setText(""+numberOfResults);
+                if(numberOfResults == 0){
+                    number.setText(null);
+                    number.setPromptText("all");
+                }
+                numberTextChanged = false;
             }
             main.setTop(previous);
             if(FieldChoiceChange){
@@ -133,6 +144,7 @@ public class SideWindowSettings extends SideWindow{
                 FieldChoiceChange = false;
             }
         });
+        /********Functionality********/
     }
 
     private void handleNumberInput(Node previous, BorderPane main) {

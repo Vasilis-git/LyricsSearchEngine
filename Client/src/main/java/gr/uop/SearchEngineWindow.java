@@ -155,6 +155,7 @@ public class SearchEngineWindow extends BorderPane{
         /*******************/
     }
     private void handleSearch(int port){
+        resultsAreaContent.getChildren().removeAll(resultsAreaContent.getChildren());//remove everything from previous search
         try (Socket clientSocket = new Socket("localhost", port);
              PrintWriter toServer = new PrintWriter(clientSocket.getOutputStream(), true);
 			 ObjectInputStream fromServer = new ObjectInputStream(clientSocket.getInputStream())) {

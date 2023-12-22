@@ -146,7 +146,7 @@ public class Server {
                 luceneEngine.setSearchField(searchField);
                 results = luceneEngine.search(read);
                 sendData(toClient, results);
-            } catch (IOException | ParseException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             
