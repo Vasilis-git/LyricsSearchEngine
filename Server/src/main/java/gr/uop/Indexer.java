@@ -16,10 +16,13 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -81,6 +84,7 @@ public class Indexer {
                     albumName =  r.get(LuceneConstants.albumNameField);
                     albumType =  r.get(LuceneConstants.albumTypeField);
                     albumYear = r.get(LuceneConstants.albumYearField);
+                    d.add(new StringField(LuceneConstants.idField, LuceneConstants.albumsID, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexTitle, albumName, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexBody, singerName+", "+albumType+", "+albumYear, Field.Store.YES));
                     docs.add(d);
@@ -97,6 +101,7 @@ public class Indexer {
                     singerName = configureArtistName(r.get(LuceneConstants.artistNameField));
                     songName = r.get(LuceneConstants.songNameField);
                     String lyrics = r.get(LuceneConstants.lyricsFieldName);
+                    d.add(new StringField(LuceneConstants.idField, LuceneConstants.lyricsID, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexTitle, singerName+", "+songName, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexBody, link+"\n"+lyrics, Field.Store.YES));
                     docs.add(d);
@@ -112,6 +117,7 @@ public class Indexer {
                     singerName = configureArtistName(r.get(LuceneConstants.singerNameField));
                     songName = r.get(LuceneConstants.songNameField);
                     link = configureLink(r.get(LuceneConstants.HrefFieldName));
+                    d.add(new StringField(LuceneConstants.idField, LuceneConstants.songsID, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexTitle, songName, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexBody, singerName+", "+link, Field.Store.YES));
                     docs.add(d);
@@ -131,7 +137,7 @@ public class Indexer {
         config.setOpenMode(OpenMode.APPEND);
         writer = new IndexWriter(FSDirectory.open(indexPath), config);
         writer.addDocument(songD);
-        writer.close();
+        close();
     }
 
     private String configureArtistName(String artist) {
@@ -147,6 +153,27 @@ public class Indexer {
 
     public void close() throws IOException {
         writer.close();
+    }
+
+    public ArrayList<SearchResult> getAllSongDocs() {
+        try(Directory indexDirectory = FSDirectory.open(indexPath);
+            IndexReader reader = DirectoryReader.open(indexDirectory);) {
+
+            ArrayList<SearchResult> toReturn = new ArrayList<>();
+            for(int i = 0; i < reader.numDocs(); i++){
+                Document d = reader.storedFields().document(i);
+                if(d.get(LuceneConstants.idField) != null && d.get(LuceneConstants.idField).equalsIgnoreCase(LuceneConstants.songsID)){
+                    toReturn.add(new SearchResult(d.get(LuceneConstants.indexTitle), d.get(LuceneConstants.indexBody)));
+                }
+            }
+            return toReturn;
+           
+        } catch (IOException e) { e.printStackTrace(); }   
+        return null;
+    }
+
+    public void removeAllSongDocs(ArrayList<SearchResult> toIndex) {
+
     }
 
 }

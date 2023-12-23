@@ -7,11 +7,15 @@ public interface LuceneConstants {
 
     public final String songsRawFilename = "songs.csv";
     public final String albumsRawFilename= "albums.csv";
-    public final String lyricsRawFilename= "lyrics.csv";   
+    public final String lyricsRawFilename= "lyrics.csv";
+    public final String songsID = "s";
+    public final String albumsID = "a";
+    public final String lyricsID = "l";
     public final String indexDir =        "Server/src/main/java/gr/uop/indexDir";
     public final String rawdataDir =      "Server/src/main/java/gr/uop/rawdataDir";
     public final String websiteLink = "https://www.azlyrics.com";
     
+    public final String idField = "i";
     public final String singerNameField = "singer_name";
     public final String artistNameField = "artist";
     public final String songNameField = "song_name";

@@ -44,9 +44,6 @@ public class SideWindowAdd extends SideWindow{
         labelFieldComb.put("Όνομα καλλιτέχνη/συγκροτήματος:", new TextField());
         labelFieldComb.put("url των στίχων του τραγουδιού(azlyrics.com):", new TextField());
 
-        Button csv = new Button("CSV");
-        csv.setFont(new Font(FONT_SIZE));
-        addToButtonList(csv);
         disableOK(true);
 
         Set<Entry<String,TextField>> entries = labelFieldComb.entrySet();

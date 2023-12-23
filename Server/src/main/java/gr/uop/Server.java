@@ -6,12 +6,10 @@ package gr.uop;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -35,22 +33,21 @@ public class Server {
         
         //load port constants
         Path filePath = Paths.get("shared.txt");
-        final int QUERY_PORT, SINGLE_DATA_INPUT_PORT, FILE_PORT;
-        int qp = 0,dip = 0,fp = 0;
+        final int QUERY_PORT, SINGLE_DATA_INPUT_PORT, DATA_DEL_PORT;
+        int qp = 0,dip = 0,ddp = 0;
         try (Scanner port_constants = new Scanner(filePath)) {
             qp = Integer.parseInt(port_constants.next());
             dip = Integer.parseInt(port_constants.next());
-            fp = Integer.parseInt(port_constants.next());
+            ddp = Integer.parseInt(port_constants.next());
 
         } catch (NumberFormatException | IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             System.exit(0);
         }
         QUERY_PORT = qp;
         SINGLE_DATA_INPUT_PORT = dip;
-        FILE_PORT = fp;
-        //if qp, dip and fp don't change, it means an exception was thrown and the program will stop
+        DATA_DEL_PORT = ddp;
+        //if qp, dip and ddp don't change, it means an exception was thrown and the program will stop
 
         System.out.println("\n\nRunning F.A.L.S.E. back-end.");
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
@@ -61,11 +58,19 @@ public class Server {
             try (ServerSocket serverSocket = new ServerSocket(SINGLE_DATA_INPUT_PORT)) {
                 while(true){
                     Socket clientSocket = serverSocket.accept();
+                    System.out.println("Here");
                     handleSingleDataInputConnection(clientSocket);
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            } catch (IOException e) { e.printStackTrace(); }
+        }).start();
+
+        new Thread(()->{
+            try(ServerSocket serverSocket = new ServerSocket(DATA_DEL_PORT)){
+                while(true){
+                    Socket clientSocket = serverSocket.accept();
+                    handleDataDeletion(clientSocket);
+                }
+            }catch(IOException e){ e.printStackTrace(); }
         }).start();
         
         try (ServerSocket serverSocket = new ServerSocket(QUERY_PORT);) {     
@@ -74,10 +79,7 @@ public class Server {
                 handleQueryConnection(clientSocket, QUERY_PORT);
             }
 
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     private static void handleSingleDataInputConnection(Socket clientSocket) {//client will send a SongInfo to add, must send response back
@@ -89,53 +91,48 @@ public class Server {
                 toClient.writeObject(response);
                 System.out.println("Sent response: "+response);
                 clientSocket.close();
-        }catch(IOException | ClassNotFoundException e){
-            e.printStackTrace();
-        }
+        }catch(IOException | ClassNotFoundException e){ e.printStackTrace(); }
     }
 
     /**
-     * Handles a client data connection
+     * Handles a client data deletion connection
      * @param clientSocket
      */
-    private static void handleDataInputConnection(Socket clientSocket) {
+    private static void handleDataDeletion(Socket clientSocket) {
         try (ObjectOutputStream toClient = new ObjectOutputStream(clientSocket.getOutputStream());
-            ObjectInputStream fromClient = new ObjectInputStream(clientSocket.getInputStream())) {     
+            /*ObjectInputStream fromClient = new ObjectInputStream(clientSocket.getInputStream())*/) {     
+
+
+            System.out.println("Front-end requests to delete data");
            
+            ArrayList<SongInfo> dataStored = new ArrayList<>();
             //send all known data to client
-            //test data
-            String read = "TEST";
-            SearchResult s1 = new SearchResult(read, read+" "+read);
-            SearchResult s2 = new SearchResult(read+"1 "+read, read+"1 "+read+" "+ read+"abc "+read+" 123"+read);
-            
-            ArrayList<SearchResult> dataStored = new ArrayList<>();
-            dataStored.add(s1);
-            dataStored.add(s2);
-            sendData(toClient, dataStored);
+            dataStored = luceneEngine.getAllSongDocs();
+
+            sendSongInfoData(toClient, dataStored);
 
             //receive new data from client, and delete from storage space
-            ArrayList<SearchResult> clientData = new ArrayList<>();
-            receiveData(fromClient, clientData);
+           /*  ArrayList<SongInfo> clientData = new ArrayList<>();
+            receiveSongInfoData(fromClient, clientData);
+            luceneEngine.deleteSongDocs(clientData);*/
 
             clientSocket.close();
-        } catch (IOException | ClassNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        } catch (IOException/* | ClassNotFoundException*/ e) { e.printStackTrace(); }
     }
 
-    private static void receiveData(ObjectInputStream fromClient, ArrayList<SearchResult> clientData) throws ClassNotFoundException, IOException {
+    private static void receiveSongInfoData(ObjectInputStream fromClient, ArrayList<SongInfo> clientData) throws ClassNotFoundException, IOException {
         do{
-            SearchResult s = (SearchResult)fromClient.readObject();
+            SongInfo s = (SongInfo)fromClient.readObject();
             if(s == null){break;}
             clientData.add(s);
         }while(true);
     }
 
-    private static void sendData(ObjectOutputStream toClient, ArrayList<SearchResult> results) throws IOException{
-        for(SearchResult s : results){
-            toClient.writeObject(s);
-        }toClient.writeObject(null);//MUST send a null object so the client can know there's nothing more to read.
+    private static void sendSongInfoData(ObjectOutputStream toClient, ArrayList<SongInfo> results) throws IOException{
+        for(SongInfo s : results){ toClient.writeObject(s); }toClient.writeObject(null);//MUST send a null object so the client can know there's nothing more to read.
+    }
+    private static void sendSearchResultData(ObjectOutputStream toClient, ArrayList<SearchResult> results) throws IOException{
+        for(SearchResult s : results){ toClient.writeObject(s); }toClient.writeObject(null);//MUST send a null object so the client can know there's nothing more to read.
     }
 
     /**
@@ -159,17 +156,11 @@ public class Server {
                 luceneEngine.setMaxResults(max_res);
                 luceneEngine.setSearchField(searchField);
                 results = luceneEngine.search(read);
-                sendData(toClient, results);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            
-            
+                sendSearchResultData(toClient, results);
+            } catch (IOException e) { e.printStackTrace(); }
 
             clientSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     /**

@@ -24,4 +24,8 @@ public class SongInfo implements Serializable{//class for adding songs in the se
     public String toString(){
         return songTitle+" "+nameOfSingerOrBand+" "+lyricsLink;
     }
+
+    public SearchResult toSearchResult() {
+        return new SearchResult(songTitle, nameOfSingerOrBand+", "+lyricsLink);
+    }
 }

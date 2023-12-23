@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Optional;
 
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -21,6 +22,7 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.text.Font;
 import javafx.util.Callback;
 
 public class SideWindowDelete extends SideWindow
@@ -39,14 +41,11 @@ public class SideWindowDelete extends SideWindow
      * @throws IOException
      * @throws UnknownHostException
      */
-    public SideWindowDelete(BorderPane main, int port) throws UnknownHostException, IOException
+    public SideWindowDelete(BorderPane main, Socket clientSocket) throws UnknownHostException, IOException
     {
         Node previous = main.getCenter();//change to this on close
-        main.setCenter(this);
         table = new TableView<>();
-        clientSocket = new Socket("localhost", port);
-        /****Look****/ 
-        table.setStyle("-fx-font-size: "+FONT_SIZE+"px;");
+        this.clientSocket = clientSocket;
         //Columns: songName singerName songHref
         //User will select one or more lines then have options to 'Remove chosen' 'Cancel choice'
         //the window must also have a 'Cancel' button that resets everything and closes this window 
@@ -54,20 +53,32 @@ public class SideWindowDelete extends SideWindow
         singerName = new TableColumn<>("Όνομα καλλιτέχνη");
         songHref = new TableColumn<>("link");
 
+
+        /****Look****/ 
+        main.setCenter(this);
+        table.setStyle("-fx-font-size: "+FONT_SIZE+"px;");
         songName.setStyle("-fx-alignment: CENTER");
         singerName.setStyle("-fx-alignment: CENTER");
         songHref.setStyle("-fx-alignment: CENTER");
+        songName.setResizable(false);
+        songHref.setResizable(false);
+        singerName.setResizable(false);
+        songName.setEditable(false);
+        songHref.setEditable(false);
+        singerName.setEditable(false);
         setOKbuttonText("Αφαίρεση επιλεγμένων");
         setCANCELbuttonText("Ακύρωση και κλείσιμο");
         disableOK(true);
         cancelChoice.setDisable(true);
+        cancelChoice.setFont(new Font(FONT_SIZE));
         addToButtonList(cancelChoice);
-        addButtonListToWindow();
         getChildren().add(table);
+        addButtonListToWindow();
         table.getColumns().add(songName);
         table.getColumns().add(singerName);
         table.getColumns().add(songHref); 
-        /****Look****/      
+        /****Look****/
+              
         
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);//do not allow resizing of columns and make them use all available width
         table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);//allow multiple selections
@@ -92,12 +103,6 @@ public class SideWindowDelete extends SideWindow
             }     
         });       
         table.setItems(data);
-        setCANCELfunctionality((e)->{
-            try {
-                clientSocket.close();
-                main.setCenter(previous);
-            } catch (IOException e1) { e1.printStackTrace(); }
-        });
         table.selectionModelProperty().addListener((obs, oldV, newV)->{
             selected = table.getSelectionModel().getSelectedItems();
             this.disableOK(false);
@@ -118,18 +123,20 @@ public class SideWindowDelete extends SideWindow
             }
         });
         setCANCELfunctionality((e)->{
-            if(selected != null){
-                Alert confirm = new Alert(AlertType.CONFIRMATION);
-                confirm.setHeaderText("Επιβεβαίωση επιλογής");
-                confirm.setContentText("Έχεις επιλεγμένα στοιχεία. Σίγουρα θες να αποχωρήσεις; Δεν θα γίναι καμία αλλαγή στα δεδομένα.");
-                Optional<ButtonType> response = confirm.showAndWait();
-                if(response.get() == ButtonType.OK){
-                    try {
-                        clientSocket.close();
+            try {
+                if(selected != null){
+                    Alert confirm = new Alert(AlertType.CONFIRMATION);
+                    confirm.setHeaderText("Επιβεβαίωση επιλογής");
+                    confirm.setContentText("Έχεις επιλεγμένα στοιχεία. Σίγουρα θες να αποχωρήσεις; Δεν θα γίναι καμία αλλαγή στα δεδομένα.");
+                    Optional<ButtonType> response = confirm.showAndWait();
+                    if(response.get() == ButtonType.OK){
                         main.setCenter(previous);
-                    } catch (IOException e1) { e1.printStackTrace(); }     
+                    }
+                }else{
+                    main.setCenter(previous);
                 }
-            }
+                System.out.println("Here");
+            } catch (Exception e1) { e1.printStackTrace(); } 
         });
         cancelChoice.setOnAction((e)->{
             if(selected != null){
@@ -145,11 +152,13 @@ public class SideWindowDelete extends SideWindow
     private void getServerData() {
         try(ObjectInputStream fromServer = new ObjectInputStream(clientSocket.getInputStream())){
             //read all data from server
-            SongInfo si = (SongInfo)fromServer.readObject();
-            while(si != null){
-                data.add(si);
-                si = (SongInfo)fromServer.readObject();
-            }
+            
+                do{
+                    final SongInfo si = (SongInfo)fromServer.readObject();
+                    if(si == null){break;}
+                    Platform.runLater(()->{data.add(si);});
+                }while(true);
+            
         }catch(ClassNotFoundException | IOException e){
             e.printStackTrace();
         }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.StringTokenizer;
@@ -131,8 +132,8 @@ public class SearchEngineWindow extends BorderPane{
 
         add.setOnAction((e)->{ new SideWindowAdd(this, DATA_INPUT_PORT); });
         delete.setOnAction((e)->{ 
-            try {
-                new SideWindowDelete(this, DATA_DEL_PORT);
+            try(Socket clientSocket = new Socket("localhost", DATA_DEL_PORT)) {
+                new SideWindowDelete(this, clientSocket);
             } catch (IOException e1) {
                 e1.printStackTrace();
             } 

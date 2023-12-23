@@ -2,6 +2,7 @@ package gr.uop;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -93,5 +94,24 @@ public class LuceneEngine {
 
     public String getSearchField() {
         return searchField;
+    }
+
+    public ArrayList<SongInfo> getAllSongDocs() {
+        ArrayList<SearchResult> fromIndex = indexer.getAllSongDocs();
+        ArrayList<SongInfo> toReturn = new ArrayList<>();
+        Iterator<SearchResult> it = fromIndex.iterator();
+        while(it.hasNext()){
+            toReturn.add(it.next().toSongInfo());
+        }
+        return toReturn;
+    }
+
+    public void deleteSongDocs(ArrayList<SongInfo> clientData) {
+        ArrayList<SearchResult> toIndex = new ArrayList<>();
+        Iterator<SongInfo> it = clientData.iterator();
+        while(it.hasNext()){
+            toIndex.add(it.next().toSearchResult());
+        }
+        indexer.removeAllSongDocs(toIndex);
     }
 }
