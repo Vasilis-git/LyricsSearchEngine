@@ -103,13 +103,14 @@ public class Server {
             /*ObjectInputStream fromClient = new ObjectInputStream(clientSocket.getInputStream())*/) {     
 
 
-            System.out.println("Front-end requests to delete data");
+            System.out.println("Front-end sent request to delete data at: "+getCurrentTime());
            
             ArrayList<SongInfo> dataStored = new ArrayList<>();
             //send all known data to client
             dataStored = luceneEngine.getAllSongDocs();
 
             sendSongInfoData(toClient, dataStored);
+             System.out.println("Finished sending data at: "+getCurrentTime());
 
             //receive new data from client, and delete from storage space
            /*  ArrayList<SongInfo> clientData = new ArrayList<>();

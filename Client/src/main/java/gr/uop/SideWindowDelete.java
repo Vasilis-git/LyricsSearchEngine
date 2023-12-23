@@ -12,6 +12,7 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -20,6 +21,7 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Font;
@@ -33,6 +35,7 @@ public class SideWindowDelete extends SideWindow
     private Button cancelChoice=new Button("Ακύρωση επιλογής");
     private Socket clientSocket; 
     ObservableList<SongInfo> selected = null;
+    private TextField search = new TextField();
     
     /**
      * creates a new window to select and delete songs
@@ -56,16 +59,18 @@ public class SideWindowDelete extends SideWindow
 
         /****Look****/ 
         main.setCenter(this);
+        search.setFont(new Font(FONT_SIZE));
+        search.setMaxWidth(Double.MAX_VALUE);
+        search.setPromptText("Αναζήτηση ονόματος τραγουδιού...");
+        Node settings = main.getTop();
+        main.setTop(search);
         table.setStyle("-fx-font-size: "+FONT_SIZE+"px;");
         songName.setStyle("-fx-alignment: CENTER");
         singerName.setStyle("-fx-alignment: CENTER");
         songHref.setStyle("-fx-alignment: CENTER");
-        songName.setResizable(false);
-        songHref.setResizable(false);
-        singerName.setResizable(false);
-        songName.setEditable(false);
-        songHref.setEditable(false);
-        singerName.setEditable(false);
+        songName.setMinWidth(songName.getText().length());
+        songHref.setMinWidth(songHref.getText().length());
+        singerName.setMinWidth(singerName.getText().length());
         setOKbuttonText("Αφαίρεση επιλεγμένων");
         setCANCELbuttonText("Ακύρωση και κλείσιμο");
         disableOK(true);
@@ -80,7 +85,7 @@ public class SideWindowDelete extends SideWindow
         /****Look****/
               
         
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);//do not allow resizing of columns and make them use all available width
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);//make columns use all available width
         table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);//allow multiple selections
 
         /****Functionality****/ 
@@ -103,45 +108,61 @@ public class SideWindowDelete extends SideWindow
             }     
         });       
         table.setItems(data);
-        table.selectionModelProperty().addListener((obs, oldV, newV)->{
-            selected = table.getSelectionModel().getSelectedItems();
-            this.disableOK(false);
-            this.cancelChoice.setDisable(false);
+        search.textProperty().addListener((obs, oldV, newV)->{
+            table.getItems().stream()
+                            .filter(item -> item.getSongTitle().toLowerCase().contains(newV.toLowerCase()))
+                            .findFirst()
+                            .ifPresent(item -> {
+                                table.getSelectionModel().clearSelection();
+                                table.getSelectionModel().select(item);
+                                table.scrollTo(item);
+                            });
+        });
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV)->{
+            Platform.runLater(()->{
+                selected = table.getSelectionModel().getSelectedItems();
+                this.disableOK(false);
+                this.cancelChoice.setDisable(false);
+            });
         });
         setOKfunctionality((e)->{
             try(ObjectOutputStream toServer = new ObjectOutputStream(clientSocket.getOutputStream())){
                 for(SongInfo s: selected){
                     toServer.writeObject(s);
                 }toServer.writeObject(null);//indicate end of objects
-                data.removeAll(selected);
-                table.getSelectionModel().clearSelection();
-                selected = null;
-                this.disableOK(true);
-                this.cancelChoice.setDisable(true);
+                Platform.runLater(()->{
+                    data.removeAll(selected);
+                    table.getSelectionModel().clearSelection();
+                    selected = null;
+                    this.disableOK(true);
+                    this.cancelChoice.setDisable(true);
+                });
             }catch(IOException l){
                 l.printStackTrace();
             }
         });
         setCANCELfunctionality((e)->{
             try {
-                if(selected != null){
-                    Alert confirm = new Alert(AlertType.CONFIRMATION);
-                    confirm.setHeaderText("Επιβεβαίωση επιλογής");
-                    confirm.setContentText("Έχεις επιλεγμένα στοιχεία. Σίγουρα θες να αποχωρήσεις; Δεν θα γίναι καμία αλλαγή στα δεδομένα.");
-                    Optional<ButtonType> response = confirm.showAndWait();
-                    if(response.get() == ButtonType.OK){
-                        main.setCenter(previous);
-                    }
-                }else{
-                    main.setCenter(previous);
-                }
-                System.out.println("Here");
+                Platform.runLater(()->{
+                    if(!table.getSelectionModel().getSelectedItems().isEmpty()){
+                        Alert confirm = new Alert(AlertType.CONFIRMATION);
+                        confirm.setHeaderText("Επιβεβαίωση επιλογής");
+                        confirm.setContentText("Έχεις επιλεγμένα στοιχεία. Σίγουρα θες να αποχωρήσεις; Δεν θα γίνει καμία αλλαγή στα δεδομένα.");
+                        Optional<ButtonType> response = confirm.showAndWait();
+                        if(response.get() == ButtonType.OK){
+                            main.setCenter(previous);
+                            main.setTop(settings);
+                        }
+                    }else{ main.setCenter(previous); main.setTop(settings); }
+                });
             } catch (Exception e1) { e1.printStackTrace(); } 
         });
         cancelChoice.setOnAction((e)->{
             if(selected != null){
                 selected = null;
-                table.getSelectionModel().clearSelection();
+                Platform.runLater(()->{
+                    table.getSelectionModel().clearSelection();
+                });
             }
         });
         /****Functionality****/
