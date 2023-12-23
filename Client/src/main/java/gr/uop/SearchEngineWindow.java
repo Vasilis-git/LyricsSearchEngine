@@ -115,26 +115,29 @@ public class SearchEngineWindow extends BorderPane{
         /***functionality***/
         //load port constants
         Path filePath = Paths.get("shared.txt");
-        final int QUERY_PORT, DATA_INPUT_PORT;
-        int qp = 0,dip = 0;
+        final int QUERY_PORT, DATA_INPUT_PORT, DATA_DEL_PORT;
+        int qp = 0,dip = 0, ddp = 0;
         try (Scanner port_constants = new Scanner(filePath)) {
             qp = Integer.parseInt(port_constants.next());
             dip = Integer.parseInt(port_constants.next());
-
+            ddp = Integer.parseInt(port_constants.next());
         } catch (NumberFormatException | IOException e) {
             e.printStackTrace();
             System.exit(0);
         }
         QUERY_PORT = qp;
         DATA_INPUT_PORT = dip;
+        DATA_DEL_PORT = ddp;
 
-        add.setOnAction((e)->{
-            SideWindowAdd addSong = new SideWindowAdd(this.getCenter(), this, DATA_INPUT_PORT);
-            this.setCenter(addSong);
+        add.setOnAction((e)->{ new SideWindowAdd(this, DATA_INPUT_PORT); });
+        delete.setOnAction((e)->{ 
+            try {
+                new SideWindowDelete(this, DATA_DEL_PORT);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            } 
         });
-        settings.setOnAction((e)->{
-            this.setTop(settingsWindow);
-        });
+        settings.setOnAction((e)->{ this.setTop(settingsWindow); });
 
         searchField.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override

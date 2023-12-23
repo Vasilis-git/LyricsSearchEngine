@@ -4,11 +4,9 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
@@ -28,8 +26,15 @@ import javafx.scene.text.Font;
 public class SideWindowAdd extends SideWindow{
     private boolean flag;
 
-    public SideWindowAdd(Node previous, BorderPane main, int port){
+    /**
+     * opens option to add song to the engine
+     * @param main the BorderPane currently in use
+     * @param port the port to communicate with the server
+     */
+    public SideWindowAdd(BorderPane main, int port){
         super();
+        Node previous = main.getCenter();
+        main.setCenter(this);
         GridPane input = new GridPane();
         input.setHgap(10);
         input.setVgap(5);
@@ -100,9 +105,7 @@ public class SideWindowAdd extends SideWindow{
                                 error.show();
                             }
                         }
-                    }catch(IOException | ClassNotFoundException e1){
-
-                    }
+                    }catch(IOException | ClassNotFoundException e1){}
                     main.setCenter(previous);
                 } 
         });
