@@ -116,12 +116,13 @@ public class SearchEngineWindow extends BorderPane{
         /***functionality***/
         //load port constants
         Path filePath = Paths.get("shared.txt");
-        final int QUERY_PORT, DATA_INPUT_PORT, DATA_DEL_PORT;
-        int qp = 0,dip = 0, ddp = 0;
+        final int QUERY_PORT, DATA_INPUT_PORT, DATA_DEL_PORT, DATA_DEL_PORT_2;
+        int qp = 0,dip = 0, ddp = 0, ddp2 = 0;
         try (Scanner port_constants = new Scanner(filePath)) {
             qp = Integer.parseInt(port_constants.next());
             dip = Integer.parseInt(port_constants.next());
             ddp = Integer.parseInt(port_constants.next());
+            ddp2 = Integer.parseInt(port_constants.next());
         } catch (NumberFormatException | IOException e) {
             e.printStackTrace();
             System.exit(0);
@@ -129,11 +130,13 @@ public class SearchEngineWindow extends BorderPane{
         QUERY_PORT = qp;
         DATA_INPUT_PORT = dip;
         DATA_DEL_PORT = ddp;
+        DATA_DEL_PORT_2 = ddp2;
 
         add.setOnAction((e)->{ new SideWindowAdd(this, DATA_INPUT_PORT); });
         delete.setOnAction((e)->{ 
             try(Socket clientSocket = new Socket("localhost", DATA_DEL_PORT)) {
-                new SideWindowDelete(this, clientSocket);
+                SideWindowDelete sd = new SideWindowDelete(this, clientSocket, DATA_DEL_PORT_2);
+                sd.sendData();
             } catch (IOException e1) {
                 e1.printStackTrace();
             } 

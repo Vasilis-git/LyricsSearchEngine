@@ -13,6 +13,7 @@ import java.util.Iterator;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVFormat.Builder;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -24,6 +25,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -151,9 +153,7 @@ public class Indexer {
         return link;
     }
 
-    public void close() throws IOException {
-        writer.close();
-    }
+
 
     public ArrayList<SearchResult> getAllSongDocs() {
         try(Directory indexDirectory = FSDirectory.open(indexPath);
@@ -172,8 +172,24 @@ public class Indexer {
         return null;
     }
 
-    public void removeAllSongDocs(ArrayList<SearchResult> toIndex) {
-
+    public void removeAllSongDocs(ArrayList<SearchResult> toIndex) throws IOException {
+        ArrayList<SearchResult> allSongDocs = getAllSongDocs();
+        allSongDocs.removeAll(toIndex);
+        IndexWriterConfig config = new IndexWriterConfig(new WhitespaceAnalyzer());
+        config.setOpenMode(OpenMode.APPEND);
+        writer = new IndexWriter(FSDirectory.open(indexPath), config);
+        for(SearchResult sr : toIndex){
+            String body = sr.getContent();
+            String artist = body.substring(0, body.indexOf(", "));
+            String link = body.substring(artist.length()+2);
+            System.out.println("["+artist+"]");
+            System.out.println("["+link+"]");
+            writer.deleteDocuments(new PhraseQuery(LuceneConstants.indexBody, artist, ", ", link));
+        }
+        close();
     }
 
+    public void close() throws IOException {
+        writer.close();
+    }
 }

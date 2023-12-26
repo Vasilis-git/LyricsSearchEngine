@@ -33,13 +33,13 @@ public class Server {
         
         //load port constants
         Path filePath = Paths.get("shared.txt");
-        final int QUERY_PORT, SINGLE_DATA_INPUT_PORT, DATA_DEL_PORT;
-        int qp = 0,dip = 0,ddp = 0;
+        final int QUERY_PORT, SINGLE_DATA_INPUT_PORT, DATA_DEL_PORT, DATA_DEL_PORT_2;
+        int qp = 0, dip = 0, ddp = 0, ddp2 = 0;
         try (Scanner port_constants = new Scanner(filePath)) {
             qp = Integer.parseInt(port_constants.next());
             dip = Integer.parseInt(port_constants.next());
             ddp = Integer.parseInt(port_constants.next());
-
+            ddp2 = Integer.parseInt(port_constants.next());
         } catch (NumberFormatException | IOException e) {
             e.printStackTrace();
             System.exit(0);
@@ -47,6 +47,7 @@ public class Server {
         QUERY_PORT = qp;
         SINGLE_DATA_INPUT_PORT = dip;
         DATA_DEL_PORT = ddp;
+        DATA_DEL_PORT_2 = ddp2;
         //if qp, dip and ddp don't change, it means an exception was thrown and the program will stop
 
         System.out.println("\n\nRunning F.A.L.S.E. back-end.");
@@ -68,7 +69,7 @@ public class Server {
             try(ServerSocket serverSocket = new ServerSocket(DATA_DEL_PORT)){
                 while(true){
                     Socket clientSocket = serverSocket.accept();
-                    handleDataDeletion(clientSocket);
+                    handleDataDeletion(clientSocket, DATA_DEL_PORT_2);
                 }
             }catch(IOException e){ e.printStackTrace(); }
         }).start();
@@ -98,11 +99,8 @@ public class Server {
      * Handles a client data deletion connection
      * @param clientSocket
      */
-    private static void handleDataDeletion(Socket clientSocket) {
-        try (ObjectOutputStream toClient = new ObjectOutputStream(clientSocket.getOutputStream());
-            /*ObjectInputStream fromClient = new ObjectInputStream(clientSocket.getInputStream())*/) {     
-
-
+    private static void handleDataDeletion(Socket clientSocket, int port2) {
+        try (ObjectOutputStream toClient = new ObjectOutputStream(clientSocket.getOutputStream())) {     
             System.out.println("Front-end sent request to delete data at: "+getCurrentTime());
            
             ArrayList<SongInfo> dataStored = new ArrayList<>();
@@ -110,15 +108,22 @@ public class Server {
             dataStored = luceneEngine.getAllSongDocs();
 
             sendSongInfoData(toClient, dataStored);
-             System.out.println("Finished sending data at: "+getCurrentTime());
+            System.out.println("Finished sending data at: "+getCurrentTime());
+
+            ServerSocket serverSocket = new ServerSocket(port2);//previous connection will be closed
+            Socket newCliSocket = serverSocket.accept();
+            ObjectInputStream fromClient = new ObjectInputStream(newCliSocket.getInputStream());
 
             //receive new data from client, and delete from storage space
-           /*  ArrayList<SongInfo> clientData = new ArrayList<>();
+            ArrayList<SongInfo> clientData = new ArrayList<>();
             receiveSongInfoData(fromClient, clientData);
-            luceneEngine.deleteSongDocs(clientData);*/
+            luceneEngine.deleteSongDocs(clientData);
+            System.out.println("Deleted data");
 
+            newCliSocket.close();
             clientSocket.close();
-        } catch (IOException/* | ClassNotFoundException*/ e) { e.printStackTrace(); }
+            serverSocket.close();
+        } catch (IOException | ClassNotFoundException e) { e.printStackTrace(); }
     }
 
     private static void receiveSongInfoData(ObjectInputStream fromClient, ArrayList<SongInfo> clientData) throws ClassNotFoundException, IOException {

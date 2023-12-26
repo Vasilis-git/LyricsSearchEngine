@@ -6,6 +6,7 @@ import java.util.Iterator;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
@@ -31,6 +32,7 @@ public class LuceneEngine {
 
     public String addToIndex(SongInfo si) {
         Document songD = new Document();//must be same format as adding songs from the csv
+        songD.add(new StringField(LuceneConstants.idField, LuceneConstants.songsID, Field.Store.YES));
         songD.add(new TextField(LuceneConstants.indexTitle, si.getSongTitle(), Field.Store.YES));
         songD.add(new TextField(LuceneConstants.indexBody, si.getNameOfArtist()+", "+si.getlyricslink(), Field.Store.YES));
         try{
@@ -112,6 +114,10 @@ public class LuceneEngine {
         while(it.hasNext()){
             toIndex.add(it.next().toSearchResult());
         }
-        indexer.removeAllSongDocs(toIndex);
+        try {
+            indexer.removeAllSongDocs(toIndex);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

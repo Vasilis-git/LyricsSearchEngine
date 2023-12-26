@@ -13,6 +13,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -20,10 +21,13 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.util.Callback;
 
@@ -36,6 +40,7 @@ public class SideWindowDelete extends SideWindow
     private Socket clientSocket; 
     ObservableList<SongInfo> selected = null;
     private TextField search = new TextField();
+    private static boolean closeWindow = false;
     
     /**
      * creates a new window to select and delete songs
@@ -44,7 +49,7 @@ public class SideWindowDelete extends SideWindow
      * @throws IOException
      * @throws UnknownHostException
      */
-    public SideWindowDelete(BorderPane main, Socket clientSocket) throws UnknownHostException, IOException
+    public SideWindowDelete(BorderPane main, Socket clientSocket, int port2) throws UnknownHostException, IOException
     {
         Node previous = main.getCenter();//change to this on close
         table = new TableView<>();
@@ -64,6 +69,7 @@ public class SideWindowDelete extends SideWindow
         search.setPromptText("Αναζήτηση ονόματος τραγουδιού...");
         Node settings = main.getTop();
         main.setTop(search);
+        VBox.setVgrow(table, Priority.ALWAYS);
         table.setStyle("-fx-font-size: "+FONT_SIZE+"px;");
         songName.setStyle("-fx-alignment: CENTER");
         singerName.setStyle("-fx-alignment: CENTER");
@@ -76,6 +82,9 @@ public class SideWindowDelete extends SideWindow
         disableOK(true);
         cancelChoice.setDisable(true);
         cancelChoice.setFont(new Font(FONT_SIZE));
+        Button close = new Button("Κλείσιμο");
+        close.setFont(new Font(FONT_SIZE));
+        addToButtonList(close);
         addToButtonList(cancelChoice);
         getChildren().add(table);
         addButtonListToWindow();
@@ -118,6 +127,19 @@ public class SideWindowDelete extends SideWindow
                                 table.scrollTo(item);
                             });
         });
+        search.setOnKeyPressed(new EventHandler<KeyEvent>(){
+            @Override
+            public void handle(KeyEvent event) {
+                table.getItems().stream()
+                                .filter(item -> item.getSongTitle().toLowerCase().equalsIgnoreCase(search.getText().toLowerCase()))
+                                .findFirst()
+                                .ifPresent(item -> {
+                                    table.getSelectionModel().clearSelection();
+                                    table.getSelectionModel().select(item);
+                                    table.scrollTo(item);
+                                });
+            }    
+        });
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV)->{
             Platform.runLater(()->{
                 selected = table.getSelectionModel().getSelectedItems();
@@ -126,7 +148,8 @@ public class SideWindowDelete extends SideWindow
             });
         });
         setOKfunctionality((e)->{
-            try(ObjectOutputStream toServer = new ObjectOutputStream(clientSocket.getOutputStream())){
+            try(Socket newCliSocket = new Socket("localhost", port2);
+                ObjectOutputStream toServer = new ObjectOutputStream(newCliSocket.getOutputStream())){
                 for(SongInfo s: selected){
                     toServer.writeObject(s);
                 }toServer.writeObject(null);//indicate end of objects
@@ -142,20 +165,10 @@ public class SideWindowDelete extends SideWindow
             }
         });
         setCANCELfunctionality((e)->{
-            try {
-                Platform.runLater(()->{
-                    if(!table.getSelectionModel().getSelectedItems().isEmpty()){
-                        Alert confirm = new Alert(AlertType.CONFIRMATION);
-                        confirm.setHeaderText("Επιβεβαίωση επιλογής");
-                        confirm.setContentText("Έχεις επιλεγμένα στοιχεία. Σίγουρα θες να αποχωρήσεις; Δεν θα γίνει καμία αλλαγή στα δεδομένα.");
-                        Optional<ButtonType> response = confirm.showAndWait();
-                        if(response.get() == ButtonType.OK){
-                            main.setCenter(previous);
-                            main.setTop(settings);
-                        }
-                    }else{ main.setCenter(previous); main.setTop(settings); }
-                });
-            } catch (Exception e1) { e1.printStackTrace(); } 
+            confirmClose(main, previous, settings);
+        });
+        close.setOnAction((e)->{
+            confirmClose(main, previous, settings);
         });
         cancelChoice.setOnAction((e)->{
             if(selected != null){
@@ -169,19 +182,42 @@ public class SideWindowDelete extends SideWindow
         getServerData();
     }
 
+    public void confirmClose(BorderPane main, Node previous, Node settings){
+        try {
+            Platform.runLater(()->{
+                if(!table.getSelectionModel().getSelectedItems().isEmpty()){
+                    Alert confirm = new Alert(AlertType.CONFIRMATION);
+                    confirm.setHeaderText("Επιβεβαίωση επιλογής");
+                    confirm.setContentText("Έχεις επιλεγμένα στοιχεία. Σίγουρα θες να αποχωρήσεις; Δεν θα γίνει καμία αλλαγή στα δεδομένα.");
+                    Optional<ButtonType> response = confirm.showAndWait();
+                    if(response.get() == ButtonType.OK){
+                        main.setCenter(previous);
+                        main.setTop(settings);
+                        closeWindow = true;
+                    }
+                }else{ main.setCenter(previous); main.setTop(settings); }
+            });
+        } catch (Exception e1) { e1.printStackTrace(); } 
+    }
 
     private void getServerData() {
-        try(ObjectInputStream fromServer = new ObjectInputStream(clientSocket.getInputStream())){
+        try(ObjectInputStream fromServer = new ObjectInputStream(clientSocket.getInputStream())){//socket will automatically close here
             //read all data from server
             
-                do{
-                    final SongInfo si = (SongInfo)fromServer.readObject();
-                    if(si == null){break;}
-                    Platform.runLater(()->{data.add(si);});
-                }while(true);
+            do{
+                final SongInfo si = (SongInfo)fromServer.readObject();
+                if(si == null){break;}
+                Platform.runLater(()->{data.add(si);});
+            }while(true);
             
         }catch(ClassNotFoundException | IOException e){
             e.printStackTrace();
         }
+    }
+
+    public void sendData() {
+        new Thread(()->{
+            while(!closeWindow){}
+        }).start();
     }
 }
