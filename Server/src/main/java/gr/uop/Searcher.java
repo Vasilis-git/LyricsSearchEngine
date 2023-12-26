@@ -41,7 +41,7 @@ public class Searcher {
             show = IndexSearcher.getMaxClauseCount();
         }else{
             show = parent.getMaxResultsCount();
-        }System.out.println(show);
+        }
         return indexSearcher.search(query, show);
     }
 

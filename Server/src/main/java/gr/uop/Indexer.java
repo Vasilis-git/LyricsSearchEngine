@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.StringTokenizer;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVFormat.Builder;
@@ -20,11 +21,16 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexDeletionPolicy;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.queryparser.flexible.standard.nodes.intervalfn.Phrase;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -104,7 +110,7 @@ public class Indexer {
                     songName = r.get(LuceneConstants.songNameField);
                     String lyrics = r.get(LuceneConstants.lyricsFieldName);
                     d.add(new StringField(LuceneConstants.idField, LuceneConstants.lyricsID, Field.Store.YES));
-                    d.add(new TextField(LuceneConstants.indexTitle, singerName+", "+songName, Field.Store.YES));
+                    d.add(new TextField(LuceneConstants.indexTitle, songName+", "+singerName, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexBody, link+"\n"+lyrics, Field.Store.YES));
                     docs.add(d);
                 }
@@ -162,7 +168,8 @@ public class Indexer {
             ArrayList<SearchResult> toReturn = new ArrayList<>();
             for(int i = 0; i < reader.numDocs(); i++){
                 Document d = reader.storedFields().document(i);
-                if(d.get(LuceneConstants.idField) != null && d.get(LuceneConstants.idField).equalsIgnoreCase(LuceneConstants.songsID)){
+                if(d.get(LuceneConstants.idField) != null  && d.get(LuceneConstants.idField).equalsIgnoreCase(LuceneConstants.songsID)){
+                    
                     toReturn.add(new SearchResult(d.get(LuceneConstants.indexTitle), d.get(LuceneConstants.indexBody)));
                 }
             }
@@ -179,14 +186,44 @@ public class Indexer {
         config.setOpenMode(OpenMode.APPEND);
         writer = new IndexWriter(FSDirectory.open(indexPath), config);
         for(SearchResult sr : toIndex){
-            String body = sr.getContent();
-            String artist = body.substring(0, body.indexOf(", "));
-            String link = body.substring(artist.length()+2);
-            System.out.println("["+artist+"]");
-            System.out.println("["+link+"]");
-            writer.deleteDocuments(new PhraseQuery(LuceneConstants.indexBody, artist, ", ", link));
+            String songName = sr.getTitle();
+            String artistName = sr.getContent().substring(0, sr.getContent().indexOf(", "));
+            PhraseQuery.Builder b1 = new PhraseQuery.Builder();
+            PhraseQuery.Builder b2 = new PhraseQuery.Builder();
+            addToBuilder(LuceneConstants.indexTitle, songName, b1);
+            addToBuilder(LuceneConstants.indexBody, artistName, b2);
+            PhraseQuery songNameQuery = b1.build();
+            PhraseQuery artistQuery = b2.build();
+            BooleanQuery.Builder b = new BooleanQuery.Builder();
+            b.add(new BooleanClause(songNameQuery, BooleanClause.Occur.MUST));//AND
+            b.add(new BooleanClause(artistQuery, BooleanClause.Occur.MUST));
+
+            //delete also the lyrics doc of the song
+            PhraseQuery.Builder b3 = new PhraseQuery.Builder();
+            int pos = addToBuilder(LuceneConstants.indexTitle, songName, b3);
+            for(String s: artistName.replaceAll("\\p{Punct}", "").toLowerCase().split(" ")){
+                b3.add(new Term(LuceneConstants.indexTitle, s), pos);
+                pos += 1;
+            }
+            BooleanQuery.Builder fin = new BooleanQuery.Builder();
+            fin.add(new BooleanClause(b3.build(), BooleanClause.Occur.SHOULD));//OR
+            fin.add(new BooleanClause(b.build(), BooleanClause.Occur.SHOULD));
+            
+            writer.deleteDocuments(fin.build());
         }
-        close();
+        writer.close();
+    }
+
+    private int addToBuilder(String field, String text, PhraseQuery.Builder b) {
+        StringTokenizer tok = new StringTokenizer(text, " ");
+        int pos = 0;
+        while(tok.hasMoreTokens()){
+            String part = tok.nextToken();
+            part = part.replaceAll("\\p{Punct}", "").toLowerCase();
+            b.add(new Term(field, part), pos);
+            pos += 1;
+        }
+        return pos;
     }
 
     public void close() throws IOException {

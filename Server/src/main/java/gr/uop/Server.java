@@ -118,7 +118,7 @@ public class Server {
             ArrayList<SongInfo> clientData = new ArrayList<>();
             receiveSongInfoData(fromClient, clientData);
             luceneEngine.deleteSongDocs(clientData);
-            System.out.println("Deleted data");
+            System.out.println("Deleted data\n");
 
             newCliSocket.close();
             clientSocket.close();

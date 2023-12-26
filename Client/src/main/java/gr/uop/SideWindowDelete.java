@@ -78,13 +78,10 @@ public class SideWindowDelete extends SideWindow
         songHref.setMinWidth(songHref.getText().length());
         singerName.setMinWidth(singerName.getText().length());
         setOKbuttonText("Αφαίρεση επιλεγμένων");
-        setCANCELbuttonText("Ακύρωση και κλείσιμο");
+        setCANCELbuttonText("Kλείσιμο");
         disableOK(true);
         cancelChoice.setDisable(true);
         cancelChoice.setFont(new Font(FONT_SIZE));
-        Button close = new Button("Κλείσιμο");
-        close.setFont(new Font(FONT_SIZE));
-        addToButtonList(close);
         addToButtonList(cancelChoice);
         getChildren().add(table);
         addButtonListToWindow();
@@ -143,8 +140,13 @@ public class SideWindowDelete extends SideWindow
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV)->{
             Platform.runLater(()->{
                 selected = table.getSelectionModel().getSelectedItems();
-                this.disableOK(false);
-                this.cancelChoice.setDisable(false);
+                if(!table.getSelectionModel().getSelectedItems().isEmpty()){
+                    this.disableOK(false);
+                    this.cancelChoice.setDisable(false);
+                }else{
+                    this.disableOK(true);
+                    this.cancelChoice.setDisable(true);
+                }
             });
         });
         setOKfunctionality((e)->{
@@ -157,8 +159,6 @@ public class SideWindowDelete extends SideWindow
                     data.removeAll(selected);
                     table.getSelectionModel().clearSelection();
                     selected = null;
-                    this.disableOK(true);
-                    this.cancelChoice.setDisable(true);
                 });
             }catch(IOException l){
                 l.printStackTrace();
@@ -167,11 +167,8 @@ public class SideWindowDelete extends SideWindow
         setCANCELfunctionality((e)->{
             confirmClose(main, previous, settings);
         });
-        close.setOnAction((e)->{
-            confirmClose(main, previous, settings);
-        });
         cancelChoice.setOnAction((e)->{
-            if(selected != null){
+            if(!table.getSelectionModel().getSelectedItems().isEmpty()){
                 selected = null;
                 Platform.runLater(()->{
                     table.getSelectionModel().clearSelection();
