@@ -12,7 +12,6 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -40,7 +39,6 @@ public class SideWindowDelete extends SideWindow
     private Socket clientSocket; 
     ObservableList<SongInfo> selected = null;
     private TextField search = new TextField();
-    private static boolean closeWindow = false;
     
     /**
      * creates a new window to select and delete songs
@@ -190,7 +188,7 @@ public class SideWindowDelete extends SideWindow
                     if(response.get() == ButtonType.OK){
                         main.setCenter(previous);
                         main.setTop(settings);
-                        closeWindow = true;
+                        notify();
                     }
                 }else{ main.setCenter(previous); main.setTop(settings); }
             });
@@ -214,7 +212,8 @@ public class SideWindowDelete extends SideWindow
 
     public void sendData() {
         new Thread(()->{
-            while(!closeWindow){}
+            try { wait(); }
+            catch (InterruptedException e) { e.printStackTrace(); }
         }).start();
     }
 }

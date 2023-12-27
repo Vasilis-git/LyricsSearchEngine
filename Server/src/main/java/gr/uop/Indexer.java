@@ -162,8 +162,8 @@ public class Indexer {
 
 
     public ArrayList<SearchResult> getAllSongDocs() {
-        try(Directory indexDirectory = FSDirectory.open(indexPath);
-            IndexReader reader = DirectoryReader.open(indexDirectory);) {
+        try(IndexWriter locWriter = new IndexWriter(FSDirectory.open(indexPath), new IndexWriterConfig(new StandardAnalyzer()).setOpenMode(OpenMode.APPEND));
+            IndexReader reader = DirectoryReader.open(locWriter);) {
 
             ArrayList<SearchResult> toReturn = new ArrayList<>();
             for(int i = 0; i < reader.numDocs(); i++){
@@ -180,8 +180,7 @@ public class Indexer {
     }
 
     public void removeAllSongDocs(ArrayList<SearchResult> toIndex) throws IOException {
-        ArrayList<SearchResult> allSongDocs = getAllSongDocs();
-        allSongDocs.removeAll(toIndex);
+
         IndexWriterConfig config = new IndexWriterConfig(new WhitespaceAnalyzer());
         config.setOpenMode(OpenMode.APPEND);
         writer = new IndexWriter(FSDirectory.open(indexPath), config);
