@@ -60,7 +60,7 @@ public class LuceneEngine {
         try{
             TopDocs hits = searcher.search(searchQuery);
             long endTime = System.currentTimeMillis();
-            System.out.println(hits.totalHits +" documents found. Time :" +(endTime - startTime));
+            System.out.println(hits.totalHits +" documents found. Time: " +(endTime - startTime)+"ms");
             for(ScoreDoc scoreDoc : hits.scoreDocs) {
                 Document doc = searcher.getDocument(scoreDoc);
                 //System.out.println(scoreDoc);
@@ -76,18 +76,6 @@ public class LuceneEngine {
             ret.add(new SearchResult("Nothing to show here", "Your search didn't yield any results.\nConsider changing the field to search in through settings."));
         }
         return ret;
-        /*
-        try {//delete all files under LuceneConstants.indexDir
-            Files.walk(Paths.get(LuceneConstants.indexDir)).sorted(Comparator.reverseOrder()).forEach(path -> {
-                try {
-                    Files.delete(path);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
     }
 
     public int getMaxResultsCount() {

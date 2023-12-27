@@ -21,17 +21,17 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexDeletionPolicy;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
-import org.apache.lucene.queryparser.flexible.standard.nodes.intervalfn.Phrase;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.PhraseQuery;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -107,7 +107,7 @@ public class Indexer {
                     Document d = new Document();
                     link = configureLink(r.get(LuceneConstants.linkFieldName));
                     singerName = configureArtistName(r.get(LuceneConstants.artistNameField));
-                    songName = r.get(LuceneConstants.songNameField);
+                    songName = configureSongName(r.get(LuceneConstants.songNameField));
                     String lyrics = r.get(LuceneConstants.lyricsFieldName);
                     d.add(new StringField(LuceneConstants.idField, LuceneConstants.lyricsID, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexTitle, songName+", "+singerName, Field.Store.YES));
@@ -123,7 +123,7 @@ public class Indexer {
                 for(CSVRecord r: records){
                     Document d = new Document();
                     singerName = configureArtistName(r.get(LuceneConstants.singerNameField));
-                    songName = r.get(LuceneConstants.songNameField);
+                    songName = configureSongName(r.get(LuceneConstants.songNameField));
                     link = configureLink(r.get(LuceneConstants.HrefFieldName));
                     d.add(new StringField(LuceneConstants.idField, LuceneConstants.songsID, Field.Store.YES));
                     d.add(new TextField(LuceneConstants.indexTitle, songName, Field.Store.YES));
@@ -148,6 +148,14 @@ public class Indexer {
         close();
     }
 
+    
+    private String configureSongName(String songName) {
+        if(songName.contains("(")){
+            songName = songName.replace("(", "").replace(")", "");
+        }
+        return songName;
+    }
+
     private String configureArtistName(String artist) {
         artist = artist.substring(0, artist.indexOf(" Lyrics"));
         return artist;
@@ -162,16 +170,18 @@ public class Indexer {
 
 
     public ArrayList<SearchResult> getAllSongDocs() {
-        try(IndexWriter locWriter = new IndexWriter(FSDirectory.open(indexPath), new IndexWriterConfig(new StandardAnalyzer()).setOpenMode(OpenMode.APPEND));
-            IndexReader reader = DirectoryReader.open(locWriter);) {
+        try(IndexReader reader = DirectoryReader.open(FSDirectory.open(indexPath))){
 
+            IndexSearcher searcher = new IndexSearcher(reader);
+            PhraseQuery pq = new PhraseQuery.Builder().add(new Term(LuceneConstants.idField, LuceneConstants.songsID)).build();
+            TopDocs hits = searcher.search(pq, Integer.MAX_VALUE);
+            
             ArrayList<SearchResult> toReturn = new ArrayList<>();
-            for(int i = 0; i < reader.numDocs(); i++){
-                Document d = reader.storedFields().document(i);
-                if(d.get(LuceneConstants.idField) != null  && d.get(LuceneConstants.idField).equalsIgnoreCase(LuceneConstants.songsID)){
-                    
-                    toReturn.add(new SearchResult(d.get(LuceneConstants.indexTitle), d.get(LuceneConstants.indexBody)));
-                }
+            for(ScoreDoc s: hits.scoreDocs){
+                Document d = searcher.storedFields().document(s.doc);
+                String title = d.getField(LuceneConstants.indexTitle).stringValue();
+                String body = d.getField(LuceneConstants.indexBody).stringValue();
+                toReturn.add(new SearchResult(title, body));
             }
             return toReturn;
            
@@ -200,7 +210,7 @@ public class Indexer {
             //delete also the lyrics doc of the song
             PhraseQuery.Builder b3 = new PhraseQuery.Builder();
             int pos = addToBuilder(LuceneConstants.indexTitle, songName, b3);
-            for(String s: artistName.replaceAll("\\p{Punct}", "").toLowerCase().split(" ")){
+            for(String s: artistName.toLowerCase().split(" ")){
                 b3.add(new Term(LuceneConstants.indexTitle, s), pos);
                 pos += 1;
             }
@@ -218,7 +228,7 @@ public class Indexer {
         int pos = 0;
         while(tok.hasMoreTokens()){
             String part = tok.nextToken();
-            part = part.replaceAll("\\p{Punct}", "").toLowerCase();
+            part = part.toLowerCase();
             b.add(new Term(field, part), pos);
             pos += 1;
         }

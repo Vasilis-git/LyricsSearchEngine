@@ -101,7 +101,7 @@ public class Server {
      */
     private static void handleDataDeletion(Socket clientSocket, int port2) {
         try (ObjectOutputStream toClient = new ObjectOutputStream(clientSocket.getOutputStream())) {     
-            System.out.println("Front-end sent request to delete data at: "+getCurrentTime());
+            System.out.println("\nFront-end sent request to delete data at: "+getCurrentTime());
            
             ArrayList<SongInfo> dataStored = new ArrayList<>();
             //send all known data to client
@@ -111,25 +111,31 @@ public class Server {
             System.out.println("Finished sending data at: "+getCurrentTime());
             clientSocket.close();
 
-            ServerSocket serverSocket = new ServerSocket(port2);//previous connection will be closed
-            Socket newCliSocket = serverSocket.accept();
-            ObjectInputStream fromClient = new ObjectInputStream(newCliSocket.getInputStream());
-            String response = (String)fromClient.readObject();
-            if(response.equalsIgnoreCase("EXIT")){
-                newCliSocket.close();
-                serverSocket.close();
-                return;
-            }
-            //receive new data from client, and delete from storage space
-            ArrayList<SongInfo> clientData = new ArrayList<>();
-            receiveSongInfoData(fromClient, clientData);
-            luceneEngine.deleteSongDocs(clientData);
-            System.out.println("Deleted data\n");
+            new Thread(()->{
+                try(ServerSocket serverSocket = new ServerSocket(port2)){//previous connection will be closed
+                    while(true){
+                        Socket newCliSocket = serverSocket.accept();
+                        ObjectInputStream fromClient = new ObjectInputStream(newCliSocket.getInputStream());
+                        String response = (String)fromClient.readObject();
+                        if(response.equalsIgnoreCase("EXIT")){
+                            System.out.println("Front-end closed connection.");
+                            newCliSocket.close();
+                            serverSocket.close();
+                            return;
+                        }
+                        //receive new data from client, and delete from storage space
+                        ArrayList<SongInfo> clientData = new ArrayList<>();
+                        receiveSongInfoData(fromClient, clientData);
+                        luceneEngine.deleteSongDocs(clientData);
+                        System.out.println("Deleted data\n");
 
-            newCliSocket.close();
+                        newCliSocket.close();
+                    }
+                }catch(IOException | ClassNotFoundException e){}
+            }).start();
             
-            serverSocket.close();
-        } catch (IOException | ClassNotFoundException e) { e.printStackTrace(); }
+            
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     private static void receiveSongInfoData(ObjectInputStream fromClient, ArrayList<SongInfo> clientData) throws ClassNotFoundException, IOException {

@@ -20,6 +20,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -93,6 +94,7 @@ public class SideWindowDelete extends SideWindow
         
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);//make columns use all available width
         table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);//allow multiple selections
+        
 
         /****Functionality****/ 
         songName.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<SongInfo,String>,ObservableValue<String>>() {
@@ -127,14 +129,16 @@ public class SideWindowDelete extends SideWindow
         search.setOnKeyPressed(new EventHandler<KeyEvent>(){
             @Override
             public void handle(KeyEvent event) {
-                table.getItems().stream()
-                                .filter(item -> item.getSongTitle().toLowerCase().equalsIgnoreCase(search.getText().toLowerCase()))
-                                .findFirst()
-                                .ifPresent(item -> {
-                                    table.getSelectionModel().clearSelection();
-                                    table.getSelectionModel().select(item);
-                                    table.scrollTo(item);
-                                });
+                if(event.getCode() == KeyCode.ENTER){//exact match
+                    table.getItems().stream()
+                                    .filter(item -> item.getSongTitle().toLowerCase().equalsIgnoreCase(search.getText().toLowerCase()))
+                                    .findFirst()
+                                    .ifPresent(item -> {
+                                        table.getSelectionModel().clearSelection();
+                                        table.getSelectionModel().select(item);
+                                        table.scrollTo(item);
+                                    });
+                }
             }    
         });
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV)->{
