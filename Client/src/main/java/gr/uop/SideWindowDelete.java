@@ -39,6 +39,7 @@ public class SideWindowDelete extends SideWindow
     private Socket clientSocket; 
     ObservableList<SongInfo> selected = null;
     private TextField search = new TextField();
+    private int port2;
     
     /**
      * creates a new window to select and delete songs
@@ -51,6 +52,7 @@ public class SideWindowDelete extends SideWindow
     {
         Node previous = main.getCenter();//change to this on close
         table = new TableView<>();
+        this.port2 = port2;
         this.clientSocket = clientSocket;
         //Columns: songName singerName songHref
         //User will select one or more lines then have options to 'Remove chosen' 'Cancel choice'
@@ -150,6 +152,7 @@ public class SideWindowDelete extends SideWindow
         setOKfunctionality((e)->{
             try(Socket newCliSocket = new Socket("localhost", port2);
                 ObjectOutputStream toServer = new ObjectOutputStream(newCliSocket.getOutputStream())){
+                    toServer.writeObject("OK");
                 for(SongInfo s: selected){
                     toServer.writeObject(s);
                 }toServer.writeObject(null);//indicate end of objects
@@ -188,11 +191,18 @@ public class SideWindowDelete extends SideWindow
                     if(response.get() == ButtonType.OK){
                         main.setCenter(previous);
                         main.setTop(settings);
-                        notify();
+                        connectAndExit();
                     }
-                }else{ main.setCenter(previous); main.setTop(settings); }
+                }else{ main.setCenter(previous); main.setTop(settings); connectAndExit();}
             });
         } catch (Exception e1) { e1.printStackTrace(); } 
+    }
+
+    private void connectAndExit() {
+        try(Socket newCliSocket = new Socket("localhost", port2);
+            ObjectOutputStream toServer = new ObjectOutputStream(newCliSocket.getOutputStream())){
+            toServer.writeObject("EXIT");
+        }catch(IOException e){ e.printStackTrace(); }
     }
 
     private void getServerData() {
@@ -208,12 +218,5 @@ public class SideWindowDelete extends SideWindow
         }catch(ClassNotFoundException | IOException e){
             e.printStackTrace();
         }
-    }
-
-    public void sendData() {
-        new Thread(()->{
-            try { wait(); }
-            catch (InterruptedException e) { e.printStackTrace(); }
-        }).start();
     }
 }

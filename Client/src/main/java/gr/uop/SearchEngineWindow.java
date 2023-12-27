@@ -135,8 +135,7 @@ public class SearchEngineWindow extends BorderPane{
         add.setOnAction((e)->{ new SideWindowAdd(this, DATA_INPUT_PORT); });
         delete.setOnAction((e)->{ 
             try(Socket clientSocket = new Socket("localhost", DATA_DEL_PORT)) {
-                SideWindowDelete sd = new SideWindowDelete(this, clientSocket, DATA_DEL_PORT_2);
-                sd.sendData();
+                new SideWindowDelete(this, clientSocket, DATA_DEL_PORT_2);
             } catch (IOException e1) {
                 e1.printStackTrace();
             } 

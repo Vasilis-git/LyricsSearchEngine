@@ -109,11 +109,17 @@ public class Server {
 
             sendSongInfoData(toClient, dataStored);
             System.out.println("Finished sending data at: "+getCurrentTime());
+            clientSocket.close();
 
             ServerSocket serverSocket = new ServerSocket(port2);//previous connection will be closed
             Socket newCliSocket = serverSocket.accept();
             ObjectInputStream fromClient = new ObjectInputStream(newCliSocket.getInputStream());
-
+            String response = (String)fromClient.readObject();
+            if(response.equalsIgnoreCase("EXIT")){
+                newCliSocket.close();
+                serverSocket.close();
+                return;
+            }
             //receive new data from client, and delete from storage space
             ArrayList<SongInfo> clientData = new ArrayList<>();
             receiveSongInfoData(fromClient, clientData);
@@ -121,7 +127,7 @@ public class Server {
             System.out.println("Deleted data\n");
 
             newCliSocket.close();
-            clientSocket.close();
+            
             serverSocket.close();
         } catch (IOException | ClassNotFoundException e) { e.printStackTrace(); }
     }
