@@ -30,7 +30,7 @@ public class Searcher {
         indexDirectory = FSDirectory.open(indexPath);
         indexReader = DirectoryReader.open(indexDirectory);
         indexSearcher = new IndexSearcher(indexReader);
-        queryParser = new QueryParser(parent.getSearchField(), new StandardAnalyzer());//make custom analyzer that will work like StandardAnalyzer but not exclude stop words
+        queryParser = new QueryParser(parent.getSearchField(), new StandardAnalyzer());
     }
 
     public TopDocs search(String searchQuery) throws IOException, ParseException {

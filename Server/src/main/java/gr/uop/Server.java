@@ -59,7 +59,6 @@ public class Server {
             try (ServerSocket serverSocket = new ServerSocket(SINGLE_DATA_INPUT_PORT)) {
                 while(true){
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("Here");
                     handleSingleDataInputConnection(clientSocket);
                 }
             } catch (IOException e) { e.printStackTrace(); }
