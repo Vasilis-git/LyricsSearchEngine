@@ -41,6 +41,7 @@ public class SearchEngineWindow extends BorderPane{
     private final ScrollPane resultsArea;
     private VBox resultsAreaContent;
     private SideWindowSettings settingsWindow;
+    public static ConnectionError conErr = new ConnectionError();
 
     public SearchEngineWindow(){
         super();
@@ -137,7 +138,7 @@ public class SearchEngineWindow extends BorderPane{
             try(Socket clientSocket = new Socket("localhost", DATA_DEL_PORT)) {
                 new SideWindowDelete(this, clientSocket, DATA_DEL_PORT_2);
             } catch (IOException e1) {
-                e1.printStackTrace();
+                conErr.showAndWait();
             } 
         });
         settings.setOnAction((e)->{ this.setTop(settingsWindow); });
@@ -183,45 +184,13 @@ public class SearchEngineWindow extends BorderPane{
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            conErr.showAndWait();
         }
     }
     private TitledPane createResultPane(SearchResult si, String toSend) {
         /*styling*/
         Text contentText = new Text(si.getContent());
         contentText.setFont(new Font(17));
-
-        /*TextFlow TextParts = new TextFlow();
-        String contentString = contentText.getText();
-        StringTokenizer tokenizer = new StringTokenizer(contentString, " ");
-        while(tokenizer.hasMoreTokens()){
-            String toCheck = tokenizer.nextToken();
-            StringTokenizer tokenizer2 = new StringTokenizer(toSend, " ");
-            while(tokenizer2.hasMoreTokens()){//make all occurences bold
-                String fromSearchField = tokenizer2.nextToken();
-                Text part = new Text();
-                part.setStyle("-fx-font-weight: bold");
-                part.setFont(new Font(17));
-                if(toCheck.equalsIgnoreCase(fromSearchField)){
-                    part.setText(toCheck+" ");
-                    TextParts.getChildren().add(part);
-                    break;
-                }else if(toCheck.contains(fromSearchField)){
-                    int indexOfSearch = toCheck.indexOf(fromSearchField);
-                    Text previous = null;
-                    if(indexOfSearch != 0){previous = new Text(toCheck.substring(0, indexOfSearch));} 
-                    part.setText(toCheck.substring(indexOfSearch, indexOfSearch+fromSearchField.length()));
-                    Text next = new Text(toCheck.substring(indexOfSearch+fromSearchField.length(), toCheck.length()));
-                    next.setText(next.getText()+" ");
-                    if(previous != null){ previous.setFont(new Font(17));}
-                    next.setFont(new Font(17));
-                    if(previous != null){ TextParts.getChildren().addAll(previous, part, next);
-                    }else{TextParts.getChildren().addAll(part, next);}
-                    break;
-                }
-            }
-        }*/
     
         TextFlow TextParts = new TextFlow(contentText);
         TextParts.setPadding(new Insets(2, 0, 5, 15));

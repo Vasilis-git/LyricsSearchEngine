@@ -101,7 +101,7 @@ public class SideWindowAdd extends SideWindow{
                                 error.show();
                             }
                         }
-                    }catch(IOException | ClassNotFoundException e1){}
+                    }catch(IOException | ClassNotFoundException e1){ SearchEngineWindow.conErr.showAndWait(); }
                     main.setCenter(previous);
                 } 
         });
