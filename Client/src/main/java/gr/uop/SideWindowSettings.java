@@ -27,7 +27,7 @@ public class SideWindowSettings extends SideWindow{
     private static int numberOfResults = 0;//0 means all there are
     private static TextField number;
     private static String searchField;
-    private boolean numberTextChanged = false, FieldChoiceChange = false, firstSelectedField = true;
+    private boolean numberTextChanged = false, FieldChoiceChange = false;
 
     public SideWindowSettings(Node previous, BorderPane main){
         /***Look***/
@@ -83,8 +83,7 @@ public class SideWindowSettings extends SideWindow{
 
             @Override
             public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
-                if(!firstSelectedField){FieldChoiceChange = true;}
-                firstSelectedField = false;
+                FieldChoiceChange = true;
                 if(newValue == titleButton){
                     searchField = titleButton.getText();
                 }else{
@@ -122,7 +121,7 @@ public class SideWindowSettings extends SideWindow{
                 if(numberTextChanged){
                     handleNumberInput(previous, main);
                     numberTextChanged = false;
-                }
+                }FieldChoiceChange = false;
             }    
         });
         setCANCELfunctionality((e)->{
